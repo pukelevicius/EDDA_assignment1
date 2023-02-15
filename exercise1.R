@@ -78,3 +78,22 @@ power_ttest = sum(pttest<0.05)/B; power_ttest
 # t-test power (probability of rejecting H0) is bigger, because t-test works better for normal data
 hist(sample(df$birthweight, 100))
 # histogram shows that data is distributed due to normal distribution
+
+# this is unfinsihed and I am not sure about the results bc z_alpha is very very strange
+# let's get 100 samples from df$birthweight
+n = 100
+sample_probabilities = numeric(n)
+for(i in 1:n){
+  x = sample(df$birthweight, n)
+  sample_probabilities[i] = sum(x < 2600)/n
+}
+s = sd(sample_probabilities)
+p_estimate = mean(sample_probabilities)
+# Using asymptotic normality, the expert computed the left end  =0.25
+# of the confidence interval for p
+# so we know that p_l = p_estimate - m = 0.25
+# we also know that m = z_alpha * s/sqrt(n) and m = p_estimate - 0.25
+m = p_estimate - 0.25
+z_alpha = m/(s/sqrt(n)); z_alpha
+p_r = p_estimate + m; p_r
+s/sqrt(n)
