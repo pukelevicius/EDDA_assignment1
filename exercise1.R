@@ -1,5 +1,4 @@
 library(dplyr)
-
 df <- read.csv('Data/birthweight.txt') # reading data
 #normality check with Shapiro-wilk test and qqpplot
 shapiro.test(df$birthweight)
@@ -53,3 +52,14 @@ sum(Tstar<Tstar20)
 
 bootstrap_CI = c(2*mu-Tstar980,2*mu-Tstar20)
 bootstrap_CI
+
+# h0 mean <= 2800
+t.test(df$birthweight, mu=2800, alt="g")
+# p value 0.01357 means that h0 has to be rejected in favor of h1
+# which means that true mean is greater than 2800
+
+# sign test
+birtweight_results = df[,1]; birtweight_results
+num_of_results_gt_than_2800 = sum(birtweight_results > 2800)
+binom.test(num_of_results_gt_than_2800, length(birtweight_results))
+# probability of success 0.569
