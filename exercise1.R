@@ -1,5 +1,4 @@
 library(dplyr)
-
 df <- read.csv('Data/birthweight.txt') # reading data
 #normality check with Shapiro-wilk test and qqpplot
 shapiro.test(df$birthweight)
@@ -53,3 +52,29 @@ sum(Tstar<Tstar20)
 
 bootstrap_CI = c(2*mu-Tstar980,2*mu-Tstar20)
 bootstrap_CI
+
+# H0 mean <= 2800
+t.test(df$birthweight, mu=2800, alt="g")
+# p value 0.01357 means that H0 has to be rejected in favor of h1
+# which means that true mean is greater than 2800
+
+# sign test
+birtweight_results = df[,1]; birtweight_results
+binom.test(sum(birtweight_results > 2800), length(birtweight_results), alt='l')[3]
+# p value = 0.97567
+
+# power of t-test and sign test
+B = 1000
+psign = numeric(B)
+pttest = numeric(B)
+n = 50
+for(i in 1:B) {
+  x = sample(df$birthweight, n)
+  psign[i] = binom.test(sum(x>2800), n, alt='g')[[3]]
+  pttest[i] = t.test(x, mu=2800, alt='g')[[3]]
+}
+power_sign = sum(psign<0.05)/B; power_sign
+power_ttest = sum(pttest<0.05)/B; power_ttest
+# t-test power (probability of rejecting H0) is bigger, because t-test works better for normal data
+hist(sample(df$birthweight, 100))
+# histogram shows that data is distributed due to normal distribution
