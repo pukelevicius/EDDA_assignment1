@@ -53,13 +53,59 @@ sum(Tstar<Tstar20)
 bootstrap_CI = c(2*mu-Tstar980,2*mu-Tstar20)
 bootstrap_CI
 
+<<<<<<< HEAD
 # h0 mean <= 2800
 t.test(df$birthweight, mu=2800, alt="g")
 # p value 0.01357 means that h0 has to be rejected in favor of h1
+=======
+# H0 mean <= 2800
+t.test(df$birthweight, mu=2800, alt="g")
+# p value 0.01357 means that H0 has to be rejected in favor of h1
+>>>>>>> 243af2601eee4eb1badcf3593e23010034398a2c
 # which means that true mean is greater than 2800
 
 # sign test
 birtweight_results = df[,1]; birtweight_results
+<<<<<<< HEAD
 num_of_results_gt_than_2800 = sum(birtweight_results > 2800)
 binom.test(num_of_results_gt_than_2800, length(birtweight_results))
 # probability of success 0.569
+=======
+binom.test(sum(birtweight_results > 2800), length(birtweight_results), alt='l')[3]
+# p value = 0.97567
+
+# power of t-test and sign test
+B = 1000
+psign = numeric(B)
+pttest = numeric(B)
+n = 50
+for(i in 1:B) {
+  x = sample(df$birthweight, n)
+  psign[i] = binom.test(sum(x>2800), n, alt='g')[[3]]
+  pttest[i] = t.test(x, mu=2800, alt='g')[[3]]
+}
+power_sign = sum(psign<0.05)/B; power_sign
+power_ttest = sum(pttest<0.05)/B; power_ttest
+# t-test power (probability of rejecting H0) is bigger, because t-test works better for normal data
+hist(sample(df$birthweight, 100))
+# histogram shows that data is distributed due to normal distribution
+
+# this is unfinsihed and I am not sure about the results bc z_alpha is very very strange
+# let's get 100 samples from df$birthweight
+n = 100
+sample_probabilities = numeric(n)
+for(i in 1:n){
+  x = sample(df$birthweight, n)
+  sample_probabilities[i] = sum(x < 2600)/n
+}
+s = sd(sample_probabilities)
+p_estimate = mean(sample_probabilities)
+# Using asymptotic normality, the expert computed the left end  =0.25
+# of the confidence interval for p
+# so we know that p_l = p_estimate - m = 0.25
+# we also know that m = z_alpha * s/sqrt(n) and m = p_estimate - 0.25
+m = p_estimate - 0.25
+z_alpha = m/(s/sqrt(n)); z_alpha
+p_r = p_estimate + m; p_r
+s/sqrt(n)
+>>>>>>> 243af2601eee4eb1badcf3593e23010034398a2c
