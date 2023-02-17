@@ -1,7 +1,8 @@
 library(dplyr)
 library(ggplot2)
 
-setwd('C:/Users/Domantas/Desktop/VU AI/EDDA/EDDA_assignment1')
+#setwd('C:/Users/Domantas/Desktop/VU AI/EDDA/EDDA_assignment1')
+setwd("C:/Users/doman/OneDrive/files/VU AI/EDDA/EDDA_assignment1")
 
 df = read.csv('Data/cholesterol.txt', header = TRUE, sep = "")
 
@@ -52,6 +53,62 @@ pr=sum(tstar>myt)/B
 p=2*min(pl,pr)
 p
 
+#
+#c)  Let x be the column After8weeks. Assume x ~ unif(3,)
 
 
+#create empty vector to hold sample means
+sample_maxs <- c()
+#take 1,000 random samples of size n=nrow(df)
+n = 1000
+for (i in 1:n){
+  sample_maxs[i] = max(sample(df$After8weeks, nrow(df), replace=TRUE))
+}
 
+#first way to estimate CI:
+estimated_upper_limit = mean(sample_maxs)
+s = sd(sample_maxs)
+z_95p = 1.96 # value from z score table for 97.5th percentile
+m = z_95p*s/sqrt(nrow(df)) #m = 1.96s/√n
+
+bounded_CI = c(estimated_upper_limit - m, estimated_upper_limit + m) #bounded 96% CI for mu
+bounded_CI
+
+#second way to estimate CI (i am more confident in this)
+cat("ci", quantile(sample_maxs, c(0.025,0.975 )))
+
+#d)
+
+theta = 3.00 # theta from 3 to 12
+t=max(df$After8weeks)
+counter = 1
+B=1000
+tstar=numeric(B);
+p_values = c()
+thetas = c()
+while (theta <= 12) {
+  
+  for (i in 1:B){
+    xstar = runif(n=nrow(df), min=3, max=theta)
+  
+    tstar[i]=max(xstar)
+    }
+  p_values
+  
+  pl=sum(tstar<t)/B
+  pr=sum(tstar>t)/B
+  
+  p_values[counter]= 2*min(pl,pr)
+  thetas[counter] = theta
+  
+  counter = counter + 1
+  theta = theta + 0.01 #increment theta by  0.01
+  
+}
+
+p_values[1]
+
+plot(x=thetas, y = p_values, type = "S")
+abline(a=0.05,b=0, col='red')
+
+#d)
