@@ -53,24 +53,13 @@ sum(Tstar<Tstar20)
 bootstrap_CI = c(2*mu-Tstar980,2*mu-Tstar20)
 bootstrap_CI
 
-<<<<<<< HEAD
-# h0 mean <= 2800
-t.test(df$birthweight, mu=2800, alt="g")
-# p value 0.01357 means that h0 has to be rejected in favor of h1
-=======
 # H0 mean <= 2800
 t.test(df$birthweight, mu=2800, alt="g")
 # p value 0.01357 means that H0 has to be rejected in favor of h1
->>>>>>> 243af2601eee4eb1badcf3593e23010034398a2c
 # which means that true mean is greater than 2800
 
 # sign test
 birtweight_results = df[,1]; birtweight_results
-<<<<<<< HEAD
-num_of_results_gt_than_2800 = sum(birtweight_results > 2800)
-binom.test(num_of_results_gt_than_2800, length(birtweight_results))
-# probability of success 0.569
-=======
 binom.test(sum(birtweight_results > 2800), length(birtweight_results), alt='l')[3]
 # p value = 0.97567
 
@@ -108,4 +97,3 @@ m = p_estimate - 0.25
 z_alpha = m/(s/sqrt(n)); z_alpha
 p_r = p_estimate + m; p_r
 s/sqrt(n)
->>>>>>> 243af2601eee4eb1badcf3593e23010034398a2c
