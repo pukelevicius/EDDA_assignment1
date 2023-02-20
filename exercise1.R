@@ -1,7 +1,6 @@
 library(dplyr)
-df <- read.csv('Data/birthweight.txt') # reading data
-#normality check with Shapiro-wilk test and qqpplot
-shapiro.test(df$birthweight)
+df <- read.csv('Data/birthweight.txt')
+p_val = shapiro.test(df$birthweight)[2]; p_val
 qqnorm(df$birthweight)
 
 
@@ -13,13 +12,12 @@ variance = var(df$birthweight)
 s = sd(df$birthweight)
 z_98p = 2.05 # value from z score table for 98th percentile
 m = z_98p*s/sqrt(n) #m = 1.96s/√n
-
 bounded_CI = c(mu - m, mu + m) #bounded 96% CI for mu
 bounded_CI
 
 # calculating sample size for 100 length CI
 
-get_m <- function(n) {
+get_m = function(n) {
   s = sd(df$birthweight)
   z_98p = 2.05 # value from z score table for 98th percentile
   m = z_98p*s/sqrt(n)
@@ -27,11 +25,10 @@ get_m <- function(n) {
   return(m)
 }
 
-
 for (sample_size in 1:1000) {
   lower_bound = mu - get_m(sample_size)
   upper_bound = mu + get_m(sample_size)
-  CI_length <- upper_bound - lower_bound
+  CI_length = upper_bound - lower_bound
   if (CI_length <= 100) {
     break
   }
@@ -82,6 +79,7 @@ hist(sample(df$birthweight, 100))
 # this is unfinsihed and I am not sure about the results bc z_alpha is very very strange
 # let's get 100 samples from df$birthweight
 n = 100
+p_lower = 0.25
 sample_probabilities = numeric(n)
 for(i in 1:n){
   x = sample(df$birthweight, n)
@@ -93,7 +91,32 @@ p_estimate = mean(sample_probabilities)
 # of the confidence interval for p
 # so we know that p_l = p_estimate - m = 0.25
 # we also know that m = z_alpha * s/sqrt(n) and m = p_estimate - 0.25
-m = p_estimate - 0.25
-z_alpha = m/(s/sqrt(n)); z_alpha
-p_r = p_estimate + m; p_r
-s/sqrt(n)
+m = p_estimate - p_lower
+p_upper = p_estimate + m;
+# standard error
+se = s/sqrt(n)
+t = m/se
+
+# e
+p_val = numeric(100)
+for(i in 1:100) {
+  males_u2600 = 34
+  females_u2600 = 28
+  males_a2600 = 61
+  females_a2600 = 65
+  under_2600 = df$birthweight[df$birthweight < 2600]
+  above_2600 = df$birthweight[df$birthweight > 2600]
+  under_2600
+  samples_males_u2600_i = sample(1:length(under_2600), males_u2600)
+  samples_males_u2600 = under_2600[samples_males_u2600_i]
+  samples_females_u2600 = under_2600[-samples_males_u2600_i]
+  samples_males_a2600_i = sample(1:length(above_2600), males_a2600)
+  samples_males_a2600 = above_2600[samples_males_a2600_i]
+  samples_females_a2600 = above_2600[-samples_males_a2600_i]
+  
+  samples_males = c(samples_males_a2600, samples_males_u2600)
+  samples_females = c(samples_females_a2600, samples_females_u2600)
+  p_val[i] = t.test(samples_males, samples_females)[[3]]
+}
+mean(p_val)
+
