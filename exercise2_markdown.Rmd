@@ -1,0 +1,90 @@
+---
+title: "exercise2"
+output: pdf_document
+date: "2023-02-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits=3)
+setwd("C:/Users/doman/OneDrive/files/VU AI/EDDA/EDDA_assignment1")
+```
+
+## R Markdown
+Exercise 2:
+
+a) Histogram plots for cholesterol samples before low fat diet and after 8 weeks of low fat diet imply that data is normally distributed, since both histograms show symmetrical "bell" shape distribution. Normality is also implied by QQ plots in which a straight diagonal line show that theoretical quantiles of normal distribution match with sample quantiles (true for both samples). However, it should be taken in to the account, when assuming normality, that in both samples we only have 18 observations. Correlation between samples of cholesterol levels before, and after 8 week diet was computed to be 0.991. Since cholesterol levels were measured for the same sample of people before and after low fat diet, it can be expected that data will be highly correlated.  
+
+
+
+```{r plots}
+df = read.csv('Data/cholesterol.txt', header = TRUE, sep = "")
+par(mfrow=c(1,2))
+hist(df$Before, main = 'Cholesterol before', xlab = 'mmol/L')
+hist(df$After8weeks, main = 'Cholesterol after 8 weeks', xlab = 'mmol/L')
+```
+```{r}
+par(mfrow=c(1,2))
+qqnorm(df$Before, col='red', pch=19, main="Normal Q-Q plot (before)")
+qqline(df$Before, col='green')
+qqnorm(df$After8weeks, col='red', pch=19, main="Normal Q-Q plot (after 8 weeks)")
+qqline(df$After8weeks, col='green')
+```
+```{r}
+plot(df$Before, df$After8weeks, xlab = "Cholesterol before diet",
+     ylab = "cholesterol after 8 weeks diet",
+     main = paste("Scatter Plot (correlation = ", round(cor(df$Before,df$After8weeks), 3),
+                  collapes=")", sep=""), col='red',pch = 19)
+```
+
+b) To verify that low fat diet is effective in lowering cholesterol levels, paired t-test and paired Wilcoxon signed rank test were constructed, where $H_0 :\mu_{before} \leq \mu_{after8weeks}$ and $H_1 : \mu_{before} > \mu_{after8weeks}$. T-test provided us with p-value equal to 0.000 which allowed us to reject $H_0$, therefore we can conclude that low fat diet is indeed effective in lowering cholesterol levels. The Wilcoxon signed rank test having the same hypothesis resulted in p-value also equal to 0.000, which also allows us to confirm alternative hypothesis that $\mu_{before} > \mu_{after8weeks}$ is true. Our motives for choosing t-test and Wilcoxon signed rank test come from our data properties. The data set cholesterol features two-paired samples, in which experimental units (18 people) have two numerical outcomes (cholesterol levels (mmol/L)) - before treatment (diet) and after it. Also, it must be mentioned that both samples imply to be normally distributed (see Q-Q plots above). Therefore, two-paired nature of data and normality allows us to conduct paired t-test, and symmetry of data allows us computing Wilcoxon signed rank test.
+
+Permutation test can also be applied in this case since we have a setting of two normally distributed paired samples.
+```{r}
+ttest = t.test(df$Before, df$After8weeks, alt='g', paired=TRUE)
+print(paste("p-value of two-paired t-test: ",round(ttest$p.value,3)))
+wilcox_test = wilcox.test(df$Before, df$After8weeks, alt='g',paired = TRUE)
+print(paste("p-value of two-paired Wilcoxon signed rank test: ",round(wilcox_test$p.value,3)))
+```
+c) Assuming that $X_1,..., X_{18} \sim Unif[3,\theta]$, where $X_1,..., X_{18}$ is random variable from column \emph{after8weeks}, we applied central limit theorem by drawing 18 samples with replacement from column \emph{after8weeks} and calculating max cholesterol level in drawn sample, this step is repeated 1000 times to collect a set of maximum values. By computing mean for aforementioned maximum values set we estimate that $\hat \theta = 7.43$. Our computed 95% confidence interval - $[6.96, 7.67]$. 
+
+```{r}
+sample_maxs <- c()
+n = 1000
+for (i in 1:n){
+  sample_maxs[i] = max(sample(df$After8weeks, nrow(df), replace=TRUE))
+}
+estimated_upper_limit = mean(sample_maxs)
+cat("Estimated Theta:", estimated_upper_limit, "\n") 
+cat("Confidence interval:", quantile(sample_maxs, probs=c(0.025,0.975 )))
+```
+d)
+
+```{r}
+
+theta = 3.00; t=max(df$After8weeks); counter = 1;B=1000;
+tstar=numeric(B); p_values = c(); thetas = c();
+while (theta <= 12) {
+  for (i in 1:B){
+    xstar = runif(n=nrow(df), min=3, max=theta)
+    tstar[i]=max(xstar)
+    }
+  p_left=sum(tstar<t)/B; p_right=sum(tstar>t)/B;
+  p_values[counter]= 2*min(p_left,p_right)
+  thetas[counter] = theta
+  counter = counter + 1
+  theta = theta + 0.01 #increment theta by  0.01
+}
+plot(x=thetas, y = p_values, type = "S", xlab = "Theta values", ylab="p-value", main = "Theta distribution according to p-values")
+abline(a=0.05,b=0, col='red')
+```
+e)
+```{r}
+binom.test(sum(df$After8weeks < 6), nrow(df), alt='l')
+
+binom.test(sum(df$After8weeks < 4.5), nrow(df), alt='l', p=0.25)
+```
+
+
+
+
