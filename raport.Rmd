@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Exercise 1. Birthweights
 
 #### a)
+Shapiro test confirms normality of the data observed on the QQ plot.
+
 ```{r echo=FALSE}
   options(digits=4)
 ```
@@ -71,8 +73,8 @@ sum(Tstar<Tstar20)
 bootstrap_CI = c(2*mu-Tstar980,2*mu-Tstar20)
 bootstrap_CI
 ```
-
 #### b)
+CI of 95% tells us that true avg weight of a newborn baby in 95% situations is bigger than 2892.2 grams
 ```{r}
 # H0 mean <= 2800
 t.test(df$birthweight, mu=2800, alt="g")
@@ -84,8 +86,9 @@ binom.test(sum(df$birthweight > 2800), length(df$birthweight), alt='l')[3]
 
 ```
 #### c)
+We can compute powers of both tests by sampling from weights distribution, computing both t-tests and sign tetss for samples, accumulating results and computing final probabilities of rejecting null hypothesis. We can observe that power of t-test is bigger, due to the fact that t-tests work better for normally distributed data.
+
 ```{r}
-# power of t-test and sign test
 B = 1000
 psign = numeric(B)
 pttest = numeric(B)
@@ -98,10 +101,9 @@ for(i in 1:B) {
 power_sign = sum(psign<0.05)/B
 power_ttest = sum(pttest<0.05)/B
 c(power_sign, power_ttest)
-# t-test power (probability of rejecting H0) is bigger, because t-test works better for normal data
-hist(sample(df$birthweight, 100))
 ```
 #### d)
+We calculated p_estimate (estimated mean of probability of getting weight under 2600) by sampling. Next, we calculated upper bound of the Condifence Interval.
 ```{r}
 n = 100
 p_lower = 0.25
@@ -112,15 +114,13 @@ for(i in 1:n){
 }
 s = sd(sample_probabilities)
 p_estimate = mean(sample_probabilities)
-# Using asymptotic normality, the expert computed the left end  =0.25
-# of the confidence interval for p
-# so we know that p_l = p_estimate - m = 0.25
-# we also know that m = z_alpha * s/sqrt(n) and m = p_estimate - 0.25
 m = p_estimate - p_lower
 p_upper = p_estimate + m
 c(p_lower, p_estimate, p_upper)
 ```
 #### e)
+We decided to divide data into two stratums: weights under 2600 grams and weights above 2600 grams. We are sampling from both startums with probabilities according to information about gender distribution. Next, we decided to perform a two-sampled t-test. Returned p-value does not indicate that expert's hypothesis is true.
+
 ```{r}
 p_val = numeric(100)
 for(i in 1:100) {
