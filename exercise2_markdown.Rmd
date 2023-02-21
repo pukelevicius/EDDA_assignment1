@@ -58,7 +58,9 @@ estimated_upper_limit = mean(sample_maxs)
 cat("Estimated Theta:", estimated_upper_limit, "\n") 
 cat("Confidence interval:", quantile(sample_maxs, probs=c(0.025,0.975 )))
 ```
-d)
+d) Here, we construct bootstrap test with test statistic $T = max(X_1,...,X_{18})$ and null hypothesis $H_0: X_1,...,X_{18} \sim Unif[3,\theta]$. in each bootstrap test iteration we take 18 samples from $\sim unif[3,\theta]$ distribution and we compute test statistic. This step is repeated $B=1000$ times to obtain sample $T^*$, from which we then estimate p-value. At first we set $\theta=3$ and we increment it by 0.01 after each bootstrap test, this is done until condition  $\theta \leq 12$ is being satisfied. At the end we are left with a two sets of 901 $\theta$ and p-value values. Below, we plot theta and corresponding p-values, the red horizontal line marks 0.05 p-value, therefore, we can see that $H_0$ is not rejected when $\theta \in [7.68, 8.78]$.
+
+Kolmogorov-Smirnov test can also be applied in this case. Let $F_x$ denote \emph{after8weeks} sample distribution and $F_{X^*}$ denote distribution of $X^* \sim unif[3,\theta]$. Then with Kolmogorov-Smirnov test we would test whether we can reject $H_0: F_x = F_{X^*}$. We would have to repeat this test for every $\theta$ in interval [3, 12] to find its values that fail to reject $H_0$.
 
 ```{r}
 
@@ -76,13 +78,25 @@ while (theta <= 12) {
   theta = theta + 0.01 #increment theta by  0.01
 }
 plot(x=thetas, y = p_values, type = "S", xlab = "Theta values", ylab="p-value", main = "Theta distribution according to p-values")
+axis(1,at=seq(0,12,0.5),labels=NA)
 abline(a=0.05,b=0, col='red')
+
+df_theta = data.frame(thetas,p_values)
+df_theta = dplyr::filter(df_theta, p_values > 0.05)
+interval <- c(min(df_theta$theta), max(df_theta$theta))
+
+print(interval)
+
 ```
 e)
-```{r}
-binom.test(sum(df$After8weeks < 6), nrow(df), alt='l')
+To test whether median cholesterol level after 8 weeks of low fat diet is less than 6, we chose to conduct sign test, with $H_0: m_x \leq 6$ and $H_1: m_x > 6$. The obtained p-value of 0.9 fails to reject null hypothesis, therefore, we confirm that the median cholesterol levels after 8 weeks of low fat diet is less than 6. 
 
-binom.test(sum(df$After8weeks < 4.5), nrow(df), alt='l', p=0.25)
+To check whether the fraction of the cholesterol levels after 8 weeks of low fat diet less than 4.5 is at most 25%, we also chose sign test, with $H_0: m_x \leq 4.5$ and $H_1: m_x > 4.5$. Since sign test for median in R is done with binom.test(), we can specify the hypothesized probability of success of 0.25. The p-value of this sign test was compute to be equal to 0, therefore, we can reject null hypothesis. Thus, we confirm that the alternative hypothesis is true that the fraction of the cholesterol levels after 8 weeks of low fat diet less than 4.5 is at most 25%.
+
+```{r}
+binom.test(sum(df$After8weeks > 6), nrow(df), alt='g')
+
+binom.test(sum(df$After8weeks > 4.5), nrow(df), alt='g', p=0.25)
 ```
 
 
