@@ -1,22 +1,46 @@
-library(dplyr)
-df <- read.csv('Data/birthweight.txt')
-p_val = shapiro.test(df$birthweight)[2]; p_val
-qqnorm(df$birthweight)
+---
+title: "Group 2"
+author:
+  - Silver Lee-A-Fong
+  - Jakub Lewkowicz
+  - Domantas Pukelevičius
+date: "2023-02-20"
+output:
+  pdf_document: default
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-#bounded 96%-CI for mean of given birthweights sample
-#EXAMPLE (continued) An (asymptotic) 95%-confidence interval for µ is the interval [X¯ − m, X¯ + m], where m = 1.96s/√n
-n = nrow(df)
-mu = mean(df$birthweight)
-variance = var(df$birthweight)
-s = sd(df$birthweight)
-z_98p = 2.05 # value from z score table for 98th percentile
-m = z_98p*s/sqrt(n) #m = 1.96s/√n
-bounded_CI = c(mu - m, mu + m) #bounded 96% CI for mu
-bounded_CI
+### Exercise 1. Birthweights
 
-# calculating sample size for 100 length CI
+#### a)
+Shapiro test confirms normality of the data observed on the QQ plot.
 
+```{r echo=FALSE}
+  options(digits=4)
+```
+```{r}
+  df <- read.csv('Data/birthweight.txt')
+  shapiro.test(df$birthweight)[2]
+  qqnorm(df$birthweight)
+```
+```{r echo=FALSE}
+  options(digits=8)
+```
+```{r}
+  n = nrow(df)
+  mu = mean(df$birthweight)
+  s = sd(df$birthweight)
+  z_98p = 2.05 # value from z score table for 98th percentile
+  m = z_98p*s/sqrt(n) # m = 1.96s/sqrt(n)
+  bounded_CI = c(mu - m, mu + m); bounded_CI #bounded 96% CI for mu
+```
+```{r echo=FALSE}
+  options(digits=6)
+```
+```{r}
 get_m = function(n) {
   s = sd(df$birthweight)
   z_98p = 2.05 # value from z score table for 98th percentile
@@ -34,7 +58,6 @@ for (sample_size in 1:1000) {
   }
 }
 sample_size
-CI_length
 
 # bootstrap 96%-CI:
 B = 1000
@@ -49,18 +72,23 @@ sum(Tstar<Tstar20)
 
 bootstrap_CI = c(2*mu-Tstar980,2*mu-Tstar20)
 bootstrap_CI
-
+```
+#### b)
+CI of 95% tells us that true avg weight of a newborn baby in 95% situations is bigger than 2892.2 grams
+```{r}
 # H0 mean <= 2800
 t.test(df$birthweight, mu=2800, alt="g")
 # p value 0.01357 means that H0 has to be rejected in favor of h1
 # which means that true mean is greater than 2800
 
 # sign test
-birtweight_results = df[,1]; birtweight_results
-binom.test(sum(birtweight_results > 2800), length(birtweight_results), alt='l')[3]
-# p value = 0.97567
+binom.test(sum(df$birthweight > 2800), length(df$birthweight), alt='l')[3]
 
-# power of t-test and sign test
+```
+#### c)
+We can compute powers of both tests by sampling from weights distribution, computing both t-tests and sign tetss for samples, accumulating results and computing final probabilities of rejecting null hypothesis. We can observe that power of t-test is bigger, due to the fact that t-tests work better for normally distributed data.
+
+```{r}
 B = 1000
 psign = numeric(B)
 pttest = numeric(B)
@@ -70,14 +98,13 @@ for(i in 1:B) {
   psign[i] = binom.test(sum(x>2800), n, alt='g')[[3]]
   pttest[i] = t.test(x, mu=2800, alt='g')[[3]]
 }
-power_sign = sum(psign<0.05)/B; power_sign
-power_ttest = sum(pttest<0.05)/B; power_ttest
-# t-test power (probability of rejecting H0) is bigger, because t-test works better for normal data
-hist(sample(df$birthweight, 100))
-# histogram shows that data is distributed due to normal distribution
-
-# this is unfinsihed and I am not sure about the results bc z_alpha is very very strange
-# let's get 100 samples from df$birthweight
+power_sign = sum(psign<0.05)/B
+power_ttest = sum(pttest<0.05)/B
+c(power_sign, power_ttest)
+```
+#### d)
+We calculated p_estimate (estimated mean of probability of getting weight under 2600) by sampling. Next, we calculated upper bound of the Condifence Interval.
+```{r}
 n = 100
 p_lower = 0.25
 sample_probabilities = numeric(n)
@@ -87,17 +114,14 @@ for(i in 1:n){
 }
 s = sd(sample_probabilities)
 p_estimate = mean(sample_probabilities)
-# Using asymptotic normality, the expert computed the left end  =0.25
-# of the confidence interval for p
-# so we know that p_l = p_estimate - m = 0.25
-# we also know that m = z_alpha * s/sqrt(n) and m = p_estimate - 0.25
 m = p_estimate - p_lower
-p_upper = p_estimate + m;
-# standard error
-se = s/sqrt(n)
-t = m/se
+p_upper = p_estimate + m
+c(p_lower, p_estimate, p_upper)
+```
+#### e)
+We decided to divide data into two stratums: weights under 2600 grams and weights above 2600 grams. We are sampling from both startums with probabilities according to information about gender distribution. Next, we decided to perform a two-sampled t-test. Returned p-value does not indicate that expert's hypothesis is true.
 
-# e
+```{r}
 p_val = numeric(100)
 for(i in 1:100) {
   males_u2600 = 34
@@ -119,4 +143,4 @@ for(i in 1:100) {
   p_val[i] = t.test(samples_males, samples_females)[[3]]
 }
 mean(p_val)
-
+```

@@ -93,6 +93,7 @@ To test whether median cholesterol level after 8 weeks of low fat diet is less t
 
 To check whether the fraction of the cholesterol levels after 8 weeks of low fat diet less than 4.5 is at most 25%, we also chose sign test, with $H_0: m_x \leq 4.5$ and $H_1: m_x > 4.5$. Since sign test for median in R is done with binom.test(), we can specify the hypothesized probability of success of 0.25. The p-value of this sign test was compute to be equal to 0, therefore, we can reject null hypothesis. Thus, we confirm that the alternative hypothesis is true that the fraction of the cholesterol levels after 8 weeks of low fat diet less than 4.5 is at most 25%.
 
+
 ```{r}
 binom.test(sum(df$After8weeks > 6), nrow(df), alt='g')
 
