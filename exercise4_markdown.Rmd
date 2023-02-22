@@ -1,0 +1,37 @@
+---
+title: "exercise4"
+author: "Domantas Pukelevičius"
+date: "22/02/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(MASS)
+```
+
+The dataset npk is available in the R package MASS. After loading the package MASS, type npk at the prompt to view this dataset. This dataset gives the yield of peas in pounds per plot, based on four factors: in which block the plot was located (labeled 1 through 6), and whether nitrogen (N), phosphate (P) or potassium (K) was applied to the soil (1 = applied, 0 = not applied). There are 24 plots, 4 per block. This is incomplete block design but balanced in the sense that within each block each soil additive is received by two plots. Our main question of interest is whether nitrogen N has an effect on yield.
+
+a)  Present an R-code for the randomization process to distribute soil additives over plots in such a way that each soil additive is received exactly by two plots within each block.
+
+I - plot location in one of the six blocks, J - factor variable for additives
+
+```{r cars}
+I=6; J=3; N=2
+rbind(rep(1:I,each=N*J),rep(1:J,N*I),sample(1:(N*I*J)))
+
+```
+b) two boxplots, one for nitrogen containing yields, and another for yields without nitrogen, show us that the average yield of plots with nitrogen within a each block is larger than average yield of plots without nitrogen within each block. The purpose to take block factor into account is to isolate any exogenous effects that may be present in certain blocks, while being absent in others, for example: one block might already contain high levels of nitrogen in the soil (naturaly), while the other block has low levels of nitrogen (also naturaly).
+
+```{r}
+df_nitrogen = dplyr::filter(df, N == 1)
+df_no_nitrogen =  dplyr::filter(df, N == 0)
+par(mfrow=c(1,2))
+boxplot(yield ~ block, data=df_nitrogen, main="yield with nitrogen"); boxplot(yield ~ block, data=df_no_nitrogen, main='yield without nitrogen')
+```
+c) Conduct a full two-way ANOVA with the response variable yield and the two factors block and N. Was it sensible to include factor block into this model? Can we also apply the Friedman test for this situation? Comment.
+```{r}
+df$block = as.factor(df$block)
+df$N = as.factor(df$N)
+anovaN = lm(yield ~ block + N,data=df);anova(anovaN)
+
+```
