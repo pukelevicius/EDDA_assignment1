@@ -1,0 +1,317 @@
+---
+title: "Group 2"
+author:
+  - Silver Lee-A-Fong
+  - Jakub Lewkowicz
+  - Domantas Pukelevičius
+date: "2023-02-20"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Exercise 1. Birthweights
+
+#### a)
+Shapiro test confirms normality of the data observed on the QQ plot.
+
+```{r echo=FALSE}
+  options(digits=4)
+```
+```{r}
+  df <- read.csv('Data/birthweight.txt')
+  shapiro.test(df$birthweight)[2]
+  qqnorm(df$birthweight)
+```
+```{r echo=FALSE}
+  options(digits=8)
+```
+```{r}
+  n = nrow(df)
+  mu = mean(df$birthweight)
+  s = sd(df$birthweight)
+  z_98p = 2.05 # value from z score table for 98th percentile
+  m = z_98p*s/sqrt(n) # m = 1.96s/sqrt(n)
+  bounded_CI = c(mu - m, mu + m); bounded_CI #bounded 96% CI for mu
+```
+```{r echo=FALSE}
+  options(digits=6)
+```
+```{r}
+get_m = function(n) {
+  s = sd(df$birthweight)
+  z_98p = 2.05 # value from z score table for 98th percentile
+  m = z_98p*s/sqrt(n)
+  
+  return(m)
+}
+
+for (sample_size in 1:1000) {
+  lower_bound = mu - get_m(sample_size)
+  upper_bound = mu + get_m(sample_size)
+  CI_length = upper_bound - lower_bound
+  if (CI_length <= 100) {
+    break
+  }
+}
+sample_size
+
+# bootstrap 96%-CI:
+B = 1000
+Tstar = 1:B
+for (i in 1:B){
+  Xstar = sample(df$birthweight, replace=TRUE)
+  Tstar[i] = mean(Xstar)
+}
+Tstar20 = quantile(Tstar, 0.020)
+Tstar980 = quantile(Tstar, 0.980)
+sum(Tstar<Tstar20)
+```
+```{r echo=FALSE}
+  options(digits=8)
+bootstrap_CI = c(2*mu-Tstar980,2*mu-Tstar20)
+bootstrap_CI
+```
+
+#### b)
+CI of 95% tells us that true avg weight of a newborn baby in 95% situations is bigger than 2892.2 grams
+```{r}
+# H0 mean <= 2800
+t.test(df$birthweight, mu=2800, alt="g")
+```
+p value of 0.01357 means that H0 has to be rejected in favor of h1, which means that true mean is greater than 2800
+```{r echo=FALSE}
+  options(digits=4)
+```
+```{r}
+# sign test
+p_value = binom.test(sum(df$birthweight > 2800), length(df$birthweight), alt='g')[3]
+```
+```{r echo=FALSE}
+sprintf(p_value, fmt = '%#.4f') 
+```
+
+#### c)
+We can compute powers of both tests by sampling from weights distribution, computing both t-tests and sign tetss for samples, accumulating results and computing final probabilities of rejecting null hypothesis. We can observe that power of t-test is bigger, due to the fact that t-tests work better for normally distributed data.
+
+```{r}
+B = 1000
+psign = numeric(B)
+pttest = numeric(B)
+n = 50
+for(i in 1:B) {
+  x = sample(df$birthweight, n)
+  psign[i] = binom.test(sum(x>2800), n, alt='g')[[3]]
+  pttest[i] = t.test(x, mu=2800, alt='g')[[3]]
+}
+power_sign = sum(psign<0.05)/B
+power_ttest = sum(pttest<0.05)/B
+```
+```{r echo=FALSE}
+  options(digits=6)
+```
+```{r}
+c(power_sign, power_ttest)
+```
+#### d)
+We calculated p_estimate (estimated mean of probability of getting weight under 2600) by sampling. Next, we calculated upper bound of the Condifence Interval.
+```{r}
+n = 100
+p_lower = 0.25
+sample_probabilities = numeric(n)
+for(i in 1:n){
+  x = sample(df$birthweight, n)
+  sample_probabilities[i] = sum(x < 2600)/n
+}
+s = sd(sample_probabilities)
+p_estimate = mean(sample_probabilities)
+m = p_estimate - p_lower
+p_upper = p_estimate + m
+c(p_lower, p_estimate, p_upper)
+```
+#### e)
+We decided to divide data into two stratums: weights under 2600 grams and weights above 2600 grams. We are sampling from both startums with probabilities according to information about gender distribution. Next, we decided to perform a two-sampled t-test. Returned p-value does not indicate that expert's hypothesis is true.
+
+```{r}
+p_val = numeric(100)
+for(i in 1:100) {
+  males_u2600 = 34
+  females_u2600 = 28
+  males_a2600 = 61
+  females_a2600 = 65
+  under_2600 = df$birthweight[df$birthweight < 2600]
+  above_2600 = df$birthweight[df$birthweight > 2600]
+  under_2600
+  samples_males_u2600_i = sample(1:length(under_2600), males_u2600)
+  samples_males_u2600 = under_2600[samples_males_u2600_i]
+  samples_females_u2600 = under_2600[-samples_males_u2600_i]
+  samples_males_a2600_i = sample(1:length(above_2600), males_a2600)
+  samples_males_a2600 = above_2600[samples_males_a2600_i]
+  samples_females_a2600 = above_2600[-samples_males_a2600_i]
+  
+  samples_males = c(samples_males_a2600, samples_males_u2600)
+  samples_females = c(samples_females_a2600, samples_females_u2600)
+  p_val[i] = t.test(samples_males, samples_females)[[3]]
+}
+```
+```{r echo=FALSE}
+  options(digits=4)
+```
+```{r}
+mean(p_val)
+```
+
+### Exercise 2: Cholersterol
+
+#### a)
+Histogram plots for cholesterol samples before low fat diet and after 8 weeks of low fat diet imply that data is normally distributed, since both histograms show symmetrical "bell" shape distribution. Normality is also implied by QQ plots in which a straight diagonal line show that theoretical quantiles of normal distribution match with sample quantiles (true for both samples). However, it should be taken in to the account, when assuming normality, that in both samples we only have 18 observations. Correlation between samples of cholesterol levels before, and after 8 week diet was computed to be 0.991. Since cholesterol levels were measured for the same sample of people before and after low fat diet, it can be expected that data will be highly correlated.  
+
+
+```{r plots}
+df = read.csv('Data/cholesterol.txt', header = TRUE, sep = "")
+par(mfrow=c(1,2))
+hist(df$Before, main = 'Cholesterol before', xlab = 'mmol/L')
+hist(df$After8weeks, main = 'Cholesterol after 8 weeks', xlab = 'mmol/L')
+```
+```{r}
+par(mfrow=c(1,2))
+qqnorm(df$Before, col='red', pch=19, main="Normal Q-Q plot (before)")
+qqline(df$Before, col='green')
+qqnorm(df$After8weeks, col='red', pch=19, main="Normal Q-Q plot (after 8 weeks)")
+qqline(df$After8weeks, col='green')
+```
+```{r}
+plot(df$Before, df$After8weeks, xlab = "Cholesterol before diet",
+     ylab = "cholesterol after 8 weeks diet",
+     main = paste("Scatter Plot (correlation = ", round(cor(df$Before,df$After8weeks), 3),
+                  collapes=")", sep=""), col='red',pch = 19)
+```
+
+#### b)
+To verify that low fat diet is effective in lowering cholesterol levels, paired t-test and paired Wilcoxon signed rank test were constructed, where $H_0 :\mu_{before} \leq \mu_{after8weeks}$ and $H_1 : \mu_{before} > \mu_{after8weeks}$. T-test provided us with p-value equal to 0.000 which allowed us to reject $H_0$, therefore we can conclude that low fat diet is indeed effective in lowering cholesterol levels. The Wilcoxon signed rank test having the same hypothesis resulted in p-value also equal to 0.000, which also allows us to confirm alternative hypothesis that $\mu_{before} > \mu_{after8weeks}$ is true. Our motives for choosing t-test and Wilcoxon signed rank test come from our data properties. The data set cholesterol features two-paired samples, in which experimental units (18 people) have two numerical outcomes (cholesterol levels (mmol/L)) - before treatment (diet) and after it. Also, it must be mentioned that both samples imply to be normally distributed (see Q-Q plots above). Therefore, two-paired nature of data and normality allows us to conduct paired t-test, and symmetry of data allows us computing Wilcoxon signed rank test.
+
+Permutation test can also be applied in this case since we have a setting of two normally distributed paired samples.
+```{r}
+ttest = t.test(df$Before, df$After8weeks, alt='g', paired=TRUE)
+print(paste("p-value of two-paired t-test: ",round(ttest$p.value,3)))
+wilcox_test = wilcox.test(df$Before, df$After8weeks, alt='g',paired = TRUE)
+print(paste("p-value of two-paired Wilcoxon signed rank test: ",round(wilcox_test$p.value,3)))
+```
+#### c)
+Assuming that $X_1,..., X_{18} \sim Unif[3,\theta]$, where $X_1,..., X_{18}$ is random variable from column \emph{after8weeks}, we applied central limit theorem by drawing 18 samples with replacement from column \emph{after8weeks} and calculating max cholesterol level in drawn sample, this step is repeated 1000 times to collect a set of maximum values. By computing mean for aforementioned maximum values set we estimate that $\hat \theta = 7.43$. Our computed 95% confidence interval - $[6.96, 7.67]$. 
+
+```{r}
+sample_maxs <- c()
+n = 1000
+for (i in 1:n){
+  sample_maxs[i] = max(sample(df$After8weeks, nrow(df), replace=TRUE))
+}
+estimated_upper_limit = mean(sample_maxs)
+cat("Estimated Theta:", estimated_upper_limit, "\n") 
+cat("Confidence interval:", quantile(sample_maxs, probs=c(0.025,0.975 )))
+```
+#### d)
+Here, we construct bootstrap test with test statistic $T = max(X_1,...,X_{18})$ and null hypothesis $H_0: X_1,...,X_{18} \sim Unif[3,\theta]$. in each bootstrap test iteration we take 18 samples from $\sim unif[3,\theta]$ distribution and we compute test statistic. This step is repeated $B=1000$ times to obtain sample $T^*$, from which we then estimate p-value. At first we set $\theta=3$ and we increment it by 0.01 after each bootstrap test, this is done until condition  $\theta \leq 12$ is being satisfied. At the end we are left with a two sets of 901 $\theta$ and p-value values. Below, we plot theta and corresponding p-values, the red horizontal line marks 0.05 p-value, therefore, we can see that $H_0$ is not rejected when $\theta \in [7.68, 8.78]$.
+
+Kolmogorov-Smirnov test can also be applied in this case. Let $F_x$ denote \emph{after8weeks} sample distribution and $F_{X^*}$ denote distribution of $X^* \sim unif[3,\theta]$. Then with Kolmogorov-Smirnov test we would test whether we can reject $H_0: F_x = F_{X^*}$. We would have to repeat this test for every $\theta$ in interval [3, 12] to find its values that fail to reject $H_0$.
+
+```{r}
+
+theta = 3.00; t=max(df$After8weeks); counter = 1;B=1000;
+tstar=numeric(B); p_values = c(); thetas = c();
+while (theta <= 12) {
+  for (i in 1:B){
+    xstar = runif(n=nrow(df), min=3, max=theta)
+    tstar[i]=max(xstar)
+    }
+  p_left=sum(tstar<t)/B; p_right=sum(tstar>t)/B;
+  p_values[counter]= 2*min(p_left,p_right)
+  thetas[counter] = theta
+  counter = counter + 1
+  theta = theta + 0.01 #increment theta by  0.01
+}
+plot(x=thetas, y = p_values, type = "S", xlab = "Theta values", ylab="p-value", main = "Theta distribution according to p-values")
+axis(1,at=seq(0,12,0.5),labels=NA)
+abline(a=0.05,b=0, col='red')
+
+df_theta = data.frame(thetas,p_values)
+df_theta = dplyr::filter(df_theta, p_values > 0.05)
+interval <- c(min(df_theta$theta), max(df_theta$theta))
+
+print(interval)
+
+```
+#### e)
+To test whether median cholesterol level after 8 weeks of low fat diet is less than 6, we chose to conduct sign test, with $H_0: m_x \leq 6$ and $H_1: m_x > 6$. The obtained p-value of 0.9 fails to reject null hypothesis, therefore, we confirm that the median cholesterol levels after 8 weeks of low fat diet is less than 6. 
+
+To check whether the fraction of the cholesterol levels after 8 weeks of low fat diet less than 4.5 is at most 25%, we also chose sign test, with $H_0: m_x \leq 4.5$ and $H_1: m_x > 4.5$. Since sign test for median in R is done with binom.test(), we can specify the hypothesized probability of success of 0.25. The p-value of this sign test was compute to be equal to 0, therefore, we can reject null hypothesis. Thus, we confirm that the alternative hypothesis is true that the fraction of the cholesterol levels after 8 weeks of low fat diet less than 4.5 is at most 25%.
+
+
+```{r}
+binom.test(sum(df$After8weeks > 6), nrow(df), alt='g')
+
+binom.test(sum(df$After8weeks > 4.5), nrow(df), alt='g', p=0.25)
+```
+
+### Exercise 3: Diet
+
+### Exercise 4: Yield of peas
+
+
+
+#### a)
+I - plot location in one of the six blocks, J - factor variable for additives
+
+```{r cars}
+I=6; J=3; N=2
+rbind(rep(1:I,each=N*J),rep(1:J,N*I),sample(1:(N*I*J)))
+
+#I think this is correct:
+I=3; B=6; N=2
+for (i in 1:B) print(sample(1:(N*I)))
+#interpretation: rows correspond to blocks, columns correspond 2 repretitions of fertilizers (N,P,K,N,P,K), cells experimental units.
+
+#For block 1 assign unit 3 to treatment 1, unit 1 to treatment 2, etc., for block
+#2 assign unit 4 to treatment 1, unit 3 to treatment 2, etc.
+
+```
+
+#### b)
+two boxplots, one for nitrogen containing yields, and another for yields without nitrogen, show us that the average yield of plots with nitrogen within a each block is larger than average yield of plots without nitrogen within each block. The purpose to take block factor into account is to isolate any exogenous effects that may be present in certain blocks, while being absent in others, for example: one block might already contain high levels of nitrogen in the soil (naturaly), while the other block has low levels of nitrogen (also naturaly).
+
+```{r}
+df = MASS::npk
+df_nitrogen = dplyr::filter(df, N == 1)
+df_no_nitrogen =  dplyr::filter(df, N == 0)
+par(mfrow=c(1,2))
+boxplot(yield ~ block, data=df_nitrogen, main="yield with nitrogen"); boxplot(yield ~ block, data=df_no_nitrogen, main='yield without nitrogen')
+```
+
+#### c)
+
+First, we check 
+
+```{r}
+df$block = as.factor(df$block)
+df$N = as.factor(df$N)
+anovaN = lm(yield ~ block * N,data=df);anova(anovaN)
+
+par(mfrow=c(1,2))
+qqnorm(residuals(anovaN));qqline(residuals(anovaN),col='red') ;plot(fitted(anovaN),residuals(anovaN))
+
+
+```
+
+```{r}
+additive_model = lm(yield ~ block + N,data=df);anova(additive_model)
+
+```
+
+```{r}
+par(mfrow=c(1,2))
+interaction.plot(df$block,df$N,df$yield, trace.label='Nitrogen',xlab='block',ylab='yield')
+interaction.plot(df$N, df$block, df$yield, trace.label='Block', xlab='nitrogen', ylab='yield')
+```
