@@ -11,6 +11,8 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+set.seed(420)
+library(lme4)
 ```
 
 ### Exercise 1. Birthweights
@@ -118,7 +120,7 @@ power_ttest = sum(pttest<0.05)/B
 c(power_sign, power_ttest)
 ```
 #### d)
-We calculated p_estimate (estimated mean of probability of getting weight under 2600) by sampling. Next, we calculated upper bound of the Confidence Interval.
+We calculated \^{p} (estimated mean of probability of getting weight under 2600) by taking 100 samples from initial birthweights sample and saving the proportions of weights above 2600. Then, we computed margin of error and upper bound of CI. With margin of error and standard deviation of \^{p}, we obtained that expert used 98% confidence level.
 ```{r}
 n = 100
 p_lower = 0.25
@@ -129,14 +131,14 @@ for(i in 1:n){
 }
 s = sd(sample_probabilities)
 p_estimate = mean(sample_probabilities)
-m = p_estimate - p_lower;m 
+m = p_estimate - p_lower;paste("margin of error:", round(m,3)) 
 p_upper = p_estimate + m
-c(p_lower, p_estimate, p_upper)
-
-z_alpha = m/s;z_alpha#I think this is t-value, because we don't have population standart deviation, if it is z- than this test was done with 98% confidence
+paste("estimated probability:", round(p_estimate,3))
+paste("CI:", round(c(p_lower, p_upper),3))
+z_alpha = m/s;paste("estimated Z-score:",round(z_alpha,3))
 ```
 #### e)
-We decided to divide data into two stratums: weights under 2600 grams and weights above 2600 grams. We are sampling from both startums with probabilities according to information about gender distribution. Next, we decided to perform a two-sampled t-test. Returned p-value does not indicate that expert's hypothesis is true.
+We decided to divide data into two subsets: weights under 2600 grams and weights above 2600 grams. We are sampling from both subsets with probabilities according to information about gender distribution. Next, we decided to perform a two-sampled t-test. Returned p-value does not indicate that expert's hypothesis is true.
 
 ```{r}
 p_val = numeric(100)
@@ -166,21 +168,6 @@ for(i in 1:100) {
 ```{r}
 mean(p_val)
 ```
-e)
-Since here we are dealing with proportions, we decided to test whether there is difference in proportions between female and male newborns to weight more than 2600 with hypothesizes formulated as: $H_0: Pr_{female >2600} = Pr_{male>2600}$ $H_1: Pr_{female >2600} \ne Pr_{male>2600}$. However, before proportions test, we have to test whether probability for newborn to be male is equal to 0.5 with binomial test hypothesizes:$H_0: Pr(x=male)=0.5$, $H_1: Pr(x=male)\ne 0.5$. The p-value of binomial test was computed to be 0.942, which fails to reject $H_0: Pr(x=male)=0.5$. Thus, with knowing that probability for newborn to be male or female is 0.5, we can infer proportions test with computed p-value of 0.501, which also fails to reject $H_0: Pr_{female >2600} = Pr_{male>2600}$. To conclude, we disagree with expert's claim that the mean weight is different for male and female babies, because we have confirmed that $Pr(x=male)=0.5$ and the $Pr_{female Weight >2600} = Pr_{male Weight>2600}$.
-```{r}
-male_less2600 = 34
-female_less2600 = 28
-
-male_above2600 = 61
-female_above2600 = 65
-
-gender_pr_test = binom.test(x=male_above2600+male_less2600, nrow(df))
-proportions_test = prop.test(c(male_above2600, female_above2600),c(male_above2600+male_less2600,female_above2600+female_less2600))
-paste("p-value for testing that probability to be born female/male is equal to 0.5:", round(gender_pr_test$p.value, 3))
-paste("p-value for testing whether proportions of female and male birth weights above 2600 are equal:",round(proportions_test$p.value, 3))
-```
-
 
 ### Exercise 2: Cholersterol
 
@@ -198,7 +185,8 @@ hist(df$After8weeks, main = 'Cholesterol after 8 weeks', xlab = 'mmol/L', font.m
 par(mfrow=c(1,2))
 qqnorm(df$Before, col='red', pch=19, main="Normal Q-Q plot (before)", font.main=10)
 qqline(df$Before, col='green')
-qqnorm(df$After8weeks, col='red', pch=19, main="Normal Q-Q plot (after 8 weeks)", font.main=10)
+qqnorm(df$After8weeks, col='red', pch=19, main="Normal Q-Q plot (after 8 weeks)",
+       font.main=10)
 qqline(df$After8weeks, col='green')
 ```
 ```{r}
@@ -216,7 +204,8 @@ Permutation test can also be applied in this case since we have a setting of two
 ttest = t.test(df$Before, df$After8weeks, alt='g', paired=TRUE)
 print(paste("p-value of two-paired t-test: ",round(ttest$p.value,3)))
 wilcox_test = wilcox.test(df$Before, df$After8weeks, alt='g',paired = TRUE)
-print(paste("p-value of two-paired Wilcoxon signed rank test: ",round(wilcox_test$p.value,3)))
+print(paste("p-value of two-paired Wilcoxon signed rank test: ",
+            round(wilcox_test$p.value,3)))
 ```
 #### c)
 Assuming that $X_1,..., X_{18} \sim Unif[3,\theta]$, where $X_1,..., X_{18}$ is random variable from column \emph{after8weeks}, we applied central limit theorem by drawing 18 samples with replacement from column \emph{after8weeks} and calculating max cholesterol level in drawn sample, this step is repeated 1000 times to collect a set of maximum values. By computing mean for aforementioned maximum values set we estimate that $\hat \theta = 7.43$. Our computed 95% confidence interval - $[6.96, 7.67]$. 
@@ -251,7 +240,8 @@ while (theta <= 12) {
   counter = counter + 1
   theta = theta + 0.01 #increment theta by  0.01
 }
-plot(x=thetas, y = p_values, type = "S", xlab = "Theta values", ylab="p-value", main = "Theta distribution according to p-values", font.main=10)
+plot(x=thetas, y = p_values, type = "S", xlab = "Theta values", ylab="p-value",
+     main = "Theta distribution according to p-values", font.main=10)
 axis(1,at=seq(0,12,0.5),labels=NA)
 abline(a=0.05,b=0, col='red')
 
@@ -307,7 +297,8 @@ We use one-way ANOVA to test whether the type of diet has an effect on the lost 
 model_b <- aov(preweight - weight6weeks ~ diet, data=data)
 summary(model_b)
 
-boxplot((preweight-weight6weeks) ~ diet, data = data, xlab = "Diet", ylab = "Weight loss", main = "Boxplot of weightloss by Diet")
+boxplot((preweight-weight6weeks) ~ diet, data = data, xlab = "Diet",
+        ylab = "Weight loss", main = "Boxplot of weightloss by Diet")
 ```
 
 #### c)
@@ -347,22 +338,12 @@ diet_3_predicted = mean(diet_3$preweight) - avg_loss_diet_3; diet_3_predicted
 
 ### Exercise 4: Yield of peas
 
-
-
 #### a)
-I - plot location in one of the six blocks, J - factor variable for additives
+I - treatment levels (additives), B - blocks, N - repetitions
 
 ```{r cars}
-I=6; J=3; N=2
-rbind(rep(1:I,each=N*J),rep(1:J,N*I),sample(1:(N*I*J)))
-
-#I think this is correct:
 I=3; B=6; N=2
 for (i in 1:B) print(sample(1:(N*I)))
-#interpretation: rows correspond to blocks, columns correspond 2 repretitions of fertilizers (N,P,K,N,P,K), cells experimental units.
-
-#For block 1 assign unit 3 to treatment 1, unit 1 to treatment 2, etc., for block
-#2 assign unit 4 to treatment 1, unit 3 to treatment 2, etc.
 
 ```
 
@@ -374,7 +355,8 @@ df = MASS::npk
 df_nitrogen = dplyr::filter(df, N == 1)
 df_no_nitrogen =  dplyr::filter(df, N == 0)
 par(mfrow=c(1,2))
-boxplot(yield ~ block, data=df_nitrogen, main="yield with nitrogen"); boxplot(yield ~ block, data=df_no_nitrogen, main='yield without nitrogen')
+boxplot(yield ~ block, data=df_nitrogen, main="yield with nitrogen")
+boxplot(yield ~ block, data=df_no_nitrogen, main='yield without nitrogen')
 ```
 
 #### c)
@@ -387,8 +369,8 @@ df$N = as.factor(df$N)
 anovaN = lm(yield ~ block * N,data=df);anova(anovaN)
 
 par(mfrow=c(1,2))
-qqnorm(residuals(anovaN));qqline(residuals(anovaN),col='red') ;plot(fitted(anovaN),residuals(anovaN))
-
+qqnorm(residuals(anovaN));qqline(residuals(anovaN),col='red')
+plot(fitted(anovaN),residuals(anovaN))
 
 ```
 
@@ -405,7 +387,7 @@ interaction.plot(df$N, df$block, df$yield, trace.label='Block', xlab='nitrogen',
 ```
 
 #### d)
-First, we constructed 3 ANOVA models (model_a, model_b, model_c), where we included all additives and in each model we checked the interaction between additive and block. Since we found that there is no interaction between block and the additives, we computed ANOVA with no interaction (additive model). In additive model (model_d) we see that additives N and K, and also block had p-value<0.05, which allow us to state that N, K and block do have an effect on yield. Also, we have noticed that potassium have no significant effect on yield, since its p-value in all 4 models was larger than 0.05. 
+First, we constructed three ANOVA models (model_a, model_b, model_c), where we included all additives and in each model we checked the interaction between additive and block. Since we found that there is no interaction between block and the additives, we computed ANOVA with no interaction (additive model). In additive model (model_d) we see that additives N and K, and also block had p-value<0.05, which allow us to state that N, K and block do have an effect on yield. Also, we have noticed that potassium have no significant effect on yield, since its p-value in all four models was larger than 0.05. 
 ```{r}
 df$K = as.factor(df$K)
 df$P = as.factor(df$P)
@@ -416,9 +398,10 @@ model_d = lm(yield ~ N + K + P + block, data=df); anova(model_d)
 ```
 
 #### e)
+we estimated that the variance of the normal population of the block effect is $54.65$, which was also found to be significant. This indicates that including block as interaction variable in part C, allow us to isolate this deviation.
+
 ```{r}
-library(lme4)
-yieldlmer=lmer(yield~N+P+K+(1|block),REML=FALSE,data=df); summary(yieldlmer)
+yieldlmer=lmer(yield~N+P+K+(1|block),REML=FALSE,data=df);yieldlmer
 yieldlmer1=lmer(yield~(1|block),REML=FALSE,data=df)
 anova(yieldlmer1,yieldlmer)
 
