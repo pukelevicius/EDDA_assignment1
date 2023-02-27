@@ -289,7 +289,6 @@ data <- read.csv("Data/diet.txt",header = TRUE, sep = "")
 To test for normality, we first create a histogram to check the distribution of the weight loss for all data. Using qq-plot to plot the residuals of the linear model of preweight data and weight6weeks data, we can observe that the data has been distributed normally. A plot of fitted data against residuals of the data shows that there is no pattern in the data, this is another confirmation for normality. The t-test results in a $p-value < 0.05$, showing that we can reject the null hypothesis saying that the mean difference equals zero. 
 
 ```{r}
-# Test normality of the data
 aovdata = lm(preweight~weight6weeks, data=data)
 par(mfrow=c(1, 3))
 hist(data$preweight - data$weight6weeks, breaks=10, font.main=10, main="Weight difference distribution", xlab="weight difference")
@@ -317,7 +316,6 @@ With the use of two-way ANOVA, we investigate the effect of the diet and gender 
 
 
 ```{r}
-# Fit a two-way ANOVA model
 data$gender = as.factor(data$gender)
 data$diet =  as.factor(data$diet)
 
