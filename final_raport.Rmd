@@ -299,26 +299,39 @@ boxplot((preweight-weight6weeks) ~ diet, data = data, xlab = "Diet", ylab = "Wei
 ```
 
 #### c)
-With the use of two-way ANOVA, we investigate the effect of the diet and gender (and possible interaction) on the lost weight. The results show that there is no interaction between the lost weight and the gender. It is also observed that the means of observations grouped by the factors are the same since the p-value is $>0.05$.
+With the use of two-way ANOVA, we investigate the effect of the diet and gender (and possible interaction) on the lost weight. The results show that there is interaction between the lost weight and the gender. It is observed that the means of observations grouped by the factors are the not the same since the p-value of diet and gender is $<0.05$. 
 
 
 
 ```{r}
 # Fit a two-way ANOVA model
-lostweights = as.factor(data$preweight - data$weight6weeks)
 data$gender = as.factor(data$gender)
+data$diet =  as.factor(data$diet)
 
-model_c <- aov(diet ~ lostweights * gender, data = data)
-summary(model_c)
+model_c <- lm(preweight - weight6weeks ~ diet * gender, data = data)
+anova(model_c)
 
-# p-value of lost weights:gender is > 0.05 which concludes that lost weight and gender have interaction
-# given the diet. It shows that diet has an effect on lost weight and gender.
 ```
 
 
 #### e)
+The two-way ANOVA model is preferred because it gives in depth information about the data that is provided. The interaction between diet and gender can be analyzed and which effect this has on the
+weight loss. The one-way ANOVA model does not give this much information about the dataset because
+we can only have one independent variable in the test. The predicted weight for diet 1 is $69.58$, for diet 2 is $68.09$ and for diet 3 $68.48$.  
 
+```{r}
+diet_1 = filter(data, diet==1) 
+diet_2 = filter(data, diet==2) 
+diet_3 = filter(data, diet==3)
 
+avg_loss_diet_1 = mean(diet_1$preweight) - mean(diet_1$weight6weeks)
+avg_loss_diet_2 = mean(diet_2$preweight) - mean(diet_2$weight6weeks)
+avg_loss_diet_3 = mean(diet_3$preweight) - mean(diet_3$weight6weeks)
+
+diet_1_predicted = mean(diet_1$preweight) - avg_loss_diet_1; diet_1_predicted
+diet_2_predicted = mean(diet_2$preweight) - avg_loss_diet_2; diet_2_predicted
+diet_3_predicted = mean(diet_3$preweight) - avg_loss_diet_3; diet_3_predicted
+```
 
 
 ### Exercise 4: Yield of peas
