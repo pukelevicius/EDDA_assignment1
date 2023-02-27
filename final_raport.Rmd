@@ -368,7 +368,7 @@ boxplot(yield ~ block, data=df_nitrogen, main="yield with nitrogen"); boxplot(yi
 
 #### c)
 
-First, we check 
+Based on both plots normality of residuals is doubtful. On first plot due to not forming a straight line, on second one due to the pattern than can be observed (ideally we do not want to observe any pattern). We can observe based on p-value that Nitrogen has significant effect on yield. It was sensible to include factor block in this model to only focus on a factor of our interest (Nitrogen). Friedman test cannot be applied, because a condition of having one observation per cell is not met.
 
 ```{r}
 df$block = as.factor(df$block)
@@ -385,6 +385,7 @@ qqnorm(residuals(anovaN));qqline(residuals(anovaN),col='red') ;plot(fitted(anova
 additive_model = lm(yield ~ block + N,data=df);anova(additive_model)
 
 ```
+
 
 ```{r}
 par(mfrow=c(1,2))
