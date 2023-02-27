@@ -403,6 +403,7 @@ par(mfrow=c(1,2))
 interaction.plot(df$block,df$N,df$yield, trace.label='Nitrogen',xlab='block',ylab='yield')
 interaction.plot(df$N, df$block, df$yield, trace.label='Block', xlab='nitrogen', ylab='yield')
 ```
+
 #### d)
 First, we constructed 3 ANOVA models (model_a, model_b, model_c), where we included all additives and in each model we checked the interaction between additive and block. Since we found that there is no interaction between block and the additives, we computed ANOVA with no interaction (additive model). In additive model (model_d) we see that additives N and K, and also block had p-value<0.05, which allow us to state that N, K and block do have an effect on yield. Also, we have noticed that potassium have no significant effect on yield, since its p-value in all 4 models was larger than 0.05. 
 ```{r}
@@ -411,11 +412,10 @@ df$P = as.factor(df$P)
 model_a = lm(yield ~ N + P + block*K, data=df); anova(model_a)
 model_b = lm(yield ~ N + K + block*P, data=df); anova(model_b)
 model_c = lm(yield ~ K + P + block*N, data=df); anova(model_c)
-model_d = lm(yield ~ N + K + P + block, data=df); anova(model_d) # we should use this
-#model_e = lm(yield ~ N + K + block, data=df);anova(model_e)
+model_d = lm(yield ~ N + K + P + block, data=df); anova(model_d)
 ```
 
-### e)
+#### e)
 ```{r}
 library(lme4)
 yieldlmer=lmer(yield~N+P+K+(1|block),REML=FALSE,data=df); summary(yieldlmer)
