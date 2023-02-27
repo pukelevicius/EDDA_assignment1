@@ -281,7 +281,8 @@ To test for normality, we first create a histogram to check the distribution of 
 ```{r}
 aovdata = lm(preweight~weight6weeks, data=data)
 par(mfrow=c(1, 3))
-hist(data$preweight - data$weight6weeks, breaks=10, font.main=10, main="Weight difference distribution", xlab="weight difference")
+hist(data$preweight - data$weight6weeks, breaks=10, font.main=10,
+     main="Weight difference distribution", xlab="weight difference")
 qqnorm(residuals(aovdata), font.main=10)
 plot(fitted(aovdata),residuals(aovdata), font.main=10)
 
