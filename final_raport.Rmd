@@ -16,27 +16,28 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Exercise 1. Birthweights
 
 #### a)
-Shapiro test confirms normality of the data observed on the QQ plot.
+QQ plot shows data distribution against the expected normal distribution. We can observe that data is normal, because observations lie approximately on a straight line. Shapiro test confirms normality of the data observed on the QQ plot (null hypothesis for Shapiro test is that data is normal, due to calculated p-value we do not reject H0).
 
-```{r echo=FALSE}
+```{r echo=FALSE, out.width="50%"}
   options(digits=4)
 ```
 ```{r}
   df <- read.csv('Data/birthweight.txt')
   shapiro.test(df$birthweight)[2]
-  qqnorm(df$birthweight)
+  qqnorm(df$birthweight, font.main=10)
 ```
 ```{r echo=FALSE}
 
   options(digits=3)
 ```
+We construct bounded 96%-CI by computing mean and margin of error based on standard deviation, Z score for 98th percentile and number of samples. To evaluate how many samples are needed to provide that the length of 96%-CI is at most 100, we run a loop that increments samples size and computes margin of error accordingly to a given sample size. Loop is terminated if CI length is smaller or equal to 100.
 ```{r}
   n = nrow(df)
   mu = mean(df$birthweight)
   s = sd(df$birthweight)
-  z_98p = 2.05 # value from z score table for 98th percentile
+  z_98p = 2.05
   m = z_98p*s/sqrt(n) # m = 1.96s/sqrt(n)
-  bounded_CI = c(mu - m, mu + m); bounded_CI #bounded 96% CI for mu
+  bounded_CI = c(mu - m, mu + m); bounded_CI
 ```
 ```{r echo=FALSE}
   options(digits=6)
@@ -78,12 +79,11 @@ bootstrap_CI
 ```
 
 #### b)
-CI of 95% tells us that true avg weight of a newborn baby in 95% situations is bigger than 2892.2 grams
+CI of 95% tells us that true average weight of a newborn baby in 95% situations is bigger than 2892.2 grams.
 ```{r}
-# H0 mean <= 2800
 t.test(df$birthweight, mu=2800, alt="g")
 ```
-p value of 0.01357 means that H0 has to be rejected in favor of h1, which means that true mean is greater than 2800
+P value of 0.01357 means that H0 has to be rejected in favor of H1, which means that true mean is greater than 2800.
 ```{r echo=FALSE}
   options(digits=4)
 ```
@@ -118,7 +118,7 @@ power_ttest = sum(pttest<0.05)/B
 c(power_sign, power_ttest)
 ```
 #### d)
-We calculated p_estimate (estimated mean of probability of getting weight under 2600) by sampling. Next, we calculated upper bound of the Condifence Interval.
+We calculated p_estimate (estimated mean of probability of getting weight under 2600) by sampling. Next, we calculated upper bound of the Confidence Interval.
 ```{r}
 n = 100
 p_lower = 0.25
@@ -191,21 +191,21 @@ Histogram plots for cholesterol samples before low fat diet and after 8 weeks of
 ```{r plots}
 df = read.csv('Data/cholesterol.txt', header = TRUE, sep = "")
 par(mfrow=c(1,2))
-hist(df$Before, main = 'Cholesterol before', xlab = 'mmol/L')
-hist(df$After8weeks, main = 'Cholesterol after 8 weeks', xlab = 'mmol/L')
+hist(df$Before, main = 'Cholesterol before', xlab = 'mmol/L', font.main=10)
+hist(df$After8weeks, main = 'Cholesterol after 8 weeks', xlab = 'mmol/L', font.main=10)
 ```
 ```{r}
 par(mfrow=c(1,2))
-qqnorm(df$Before, col='red', pch=19, main="Normal Q-Q plot (before)")
+qqnorm(df$Before, col='red', pch=19, main="Normal Q-Q plot (before)", font.main=10)
 qqline(df$Before, col='green')
-qqnorm(df$After8weeks, col='red', pch=19, main="Normal Q-Q plot (after 8 weeks)")
+qqnorm(df$After8weeks, col='red', pch=19, main="Normal Q-Q plot (after 8 weeks)", font.main=10)
 qqline(df$After8weeks, col='green')
 ```
 ```{r}
 plot(df$Before, df$After8weeks, xlab = "Cholesterol before diet",
      ylab = "cholesterol after 8 weeks diet",
      main = paste("Scatter Plot (correlation = ", round(cor(df$Before,df$After8weeks), 3),
-                  collapes=")", sep=""), col='red',pch = 19)
+                  collapes=")", sep=""), col='red',pch = 19, font.main=10)
 ```
 
 #### b)
@@ -251,7 +251,7 @@ while (theta <= 12) {
   counter = counter + 1
   theta = theta + 0.01 #increment theta by  0.01
 }
-plot(x=thetas, y = p_values, type = "S", xlab = "Theta values", ylab="p-value", main = "Theta distribution according to p-values")
+plot(x=thetas, y = p_values, type = "S", xlab = "Theta values", ylab="p-value", main = "Theta distribution according to p-values", font.main=10)
 axis(1,at=seq(0,12,0.5),labels=NA)
 abline(a=0.05,b=0, col='red')
 
@@ -276,10 +276,11 @@ binom.test(sum(df$After8weeks > 4.5), nrow(df), alt='g', p=0.25)
 
 ### Exercise 3: Diet
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE, results='hide'}
 library(dplyr)
 library(multcomp)
-
+```
+```{r}
 data <- read.csv("Data/diet.txt",header = TRUE, sep = "")
 ```
 
@@ -288,17 +289,13 @@ data <- read.csv("Data/diet.txt",header = TRUE, sep = "")
 To test for normality, we first create a histogram to check the distribution of the weight loss for all data. Using qq-plot to plot the residuals of the linear model of preweight data and weight6weeks data, we can observe that the data has been distributed normally. A plot of fitted data against residuals of the data shows that there is no pattern in the data, this is another confirmation for normality. The t-test results in a $p-value < 0.05$, showing that we can reject the null hypothesis saying that the mean difference equals zero. 
 
 ```{r}
-# Test the assumptions
-hist(data$preweight - data$weight6weeks, breaks=10)
-
 # Test normality of the data
 aovdata = lm(preweight~weight6weeks, data=data)
+par(mfrow=c(1, 3))
+hist(data$preweight - data$weight6weeks, breaks=10, font.main=10, main="Weight difference distribution", xlab="weight difference")
+qqnorm(residuals(aovdata), font.main=10)
+plot(fitted(aovdata),residuals(aovdata), font.main=10)
 
-qqnorm(residuals(aovdata))
-plot(fitted(aovdata),residuals(aovdata))
-
-# Conduct a t-test to test the claim that diet affects weight loss
-# p-value is small so we can reject H0 claiming that mean difference is zero.
 t.test(data$preweight, data$weight6weeks, paired=TRUE)
 ```
 
@@ -308,11 +305,9 @@ We use one-way ANOVA to test whether the type of diet has an effect on the lost 
 
 
 ```{r}
-# - If normality assumption is not met, Kruskal-wallis can be used
 model_b <- aov(preweight - weight6weeks ~ diet, data=data)
 summary(model_b)
 
-# Which diet was the best for losing weight? 
 boxplot((preweight-weight6weeks) ~ diet, data = data, xlab = "Diet", ylab = "Weight loss", main = "Boxplot of weightloss by Diet")
 ```
 
