@@ -392,3 +392,12 @@ par(mfrow=c(1,2))
 interaction.plot(df$block,df$N,df$yield, trace.label='Nitrogen',xlab='block',ylab='yield')
 interaction.plot(df$N, df$block, df$yield, trace.label='Block', xlab='nitrogen', ylab='yield')
 ```
+
+#### d)
+```{r}
+df$K = as.factor(df$K)
+df$P = as.factor(df$P)
+model_a = lm(yield ~ N + P + block*K, data=df); anova(model_a)
+model_b = lm(yield ~ N + K + block*P, data=df); anova(model_b)
+model_c = lm(yield ~ N + K + P + block, data=df); anova(model_c)
+```
