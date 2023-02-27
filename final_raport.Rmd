@@ -27,7 +27,8 @@ Shapiro test confirms normality of the data observed on the QQ plot.
   qqnorm(df$birthweight)
 ```
 ```{r echo=FALSE}
-  options(digits=8)
+
+  options(digits=3)
 ```
 ```{r}
   n = nrow(df)
@@ -128,9 +129,11 @@ for(i in 1:n){
 }
 s = sd(sample_probabilities)
 p_estimate = mean(sample_probabilities)
-m = p_estimate - p_lower
+m = p_estimate - p_lower;m 
 p_upper = p_estimate + m
 c(p_lower, p_estimate, p_upper)
+
+z_alpha = m/s;z_alpha#I think this is t-value, because we don't have population standart deviation, if it is z- than this test was done with 98% confidence
 ```
 #### e)
 We decided to divide data into two stratums: weights under 2600 grams and weights above 2600 grams. We are sampling from both startums with probabilities according to information about gender distribution. Next, we decided to perform a two-sampled t-test. Returned p-value does not indicate that expert's hypothesis is true.
@@ -163,6 +166,21 @@ for(i in 1:100) {
 ```{r}
 mean(p_val)
 ```
+e)
+Since here we are dealing with proportions, we decided to test whether there is difference in proportions between female and male newborns to weight more than 2600 with hypothesizes formulated as: $H_0: Pr_{female >2600} = Pr_{male>2600}$ $H_1: Pr_{female >2600} \ne Pr_{male>2600}$. However, before proportions test, we have to test whether probability for newborn to be male is equal to 0.5 with binomial test hypothesizes:$H_0: Pr(x=male)=0.5$, $H_1: Pr(x=male)\ne 0.5$. The p-value of binomial test was computed to be 0.942, which fails to reject $H_0: Pr(x=male)=0.5$. Thus, with knowing that probability for newborn to be male or female is 0.5, we can infer proportions test with computed p-value of 0.501, which also fails to reject $H_0: Pr_{female >2600} = Pr_{male>2600}$. To conclude, we disagree with expert's claim that the mean weight is different for male and female babies, because we have confirmed that $Pr(x=male)=0.5$ and the $Pr_{female Weight >2600} = Pr_{male Weight>2600}$.
+```{r}
+male_less2600 = 34
+female_less2600 = 28
+
+male_above2600 = 61
+female_above2600 = 65
+
+gender_pr_test = binom.test(x=male_above2600+male_less2600, nrow(df))
+proportions_test = prop.test(c(male_above2600, female_above2600),c(male_above2600+male_less2600,female_above2600+female_less2600))
+paste("p-value for testing that probability to be born female/male is equal to 0.5:", round(gender_pr_test$p.value, 3))
+paste("p-value for testing whether proportions of female and male birth weights above 2600 are equal:",round(proportions_test$p.value, 3))
+```
+
 
 ### Exercise 2: Cholersterol
 
