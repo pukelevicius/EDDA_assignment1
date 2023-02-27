@@ -258,6 +258,69 @@ binom.test(sum(df$After8weeks > 4.5), nrow(df), alt='g', p=0.25)
 
 ### Exercise 3: Diet
 
+```{r}
+library(dplyr)
+library(multcomp)
+
+data <- read.csv("Data/diet.txt",header = TRUE, sep = "")
+```
+
+
+#### a) 
+To test for normality, we first create a histogram to check the distribution of the weight loss for all data. Using qq-plot to plot the residuals of the linear model of preweight data and weight6weeks data, we can observe that the data has been distributed normally. A plot of fitted data against residuals of the data shows that there is no pattern in the data, this is another confirmation for normality. The t-test results in a $p-value < 0.05$, showing that we can reject the null hypothesis saying that the mean difference equals zero. 
+
+```{r}
+# Test the assumptions
+hist(data$preweight - data$weight6weeks, breaks=10)
+
+# Test normality of the data
+aovdata = lm(preweight~weight6weeks, data=data)
+
+qqnorm(residuals(aovdata))
+plot(fitted(aovdata),residuals(aovdata))
+
+# Conduct a t-test to test the claim that diet affects weight loss
+# p-value is small so we can reject H0 claiming that mean difference is zero.
+t.test(data$preweight, data$weight6weeks, paired=TRUE)
+```
+
+
+#### b)
+We use one-way ANOVA to test whether the type of diet has an effect on the lost weight. The result of one-way ANOVA will help us to find out whether all three types of diets lead to weight loss. The result of one-way ANOVA gives us a p-value that is $< 0.05$, meaning that we can reject the null hypothesis stating that the mean difference is zero. From this it can be said that the mean weight loss is affected by the three types of diets. Using a box plot we visualize that diet 3 has the largest amount of weight loss, indicating that this diet is losing the most weight on average. For this situation Kruskal-Wallis can be used to test whether the medians are different for multiple groups. The outcome would describe whether the effects of the three diets are the same or not on the weight lost. Kruskal-Wallis can be applied but won't provide significant data to tell which diet was best for losing weight.
+
+
+```{r}
+# - If normality assumption is not met, Kruskal-wallis can be used
+model_b <- aov(preweight - weight6weeks ~ diet, data=data)
+summary(model_b)
+
+# Which diet was the best for losing weight? 
+boxplot((preweight-weight6weeks) ~ diet, data = data, xlab = "Diet", ylab = "Weight loss", main = "Boxplot of weightloss by Diet")
+```
+
+#### c)
+With the use of two-way ANOVA, we investigate the effect of the diet and gender (and possible interaction) on the lost weight. The results show that there is no interaction between the lost weight and the gender. It is also observed that the means of observations grouped by the factors are the same since the p-value is $>0.05$.
+
+
+
+```{r}
+# Fit a two-way ANOVA model
+lostweights = as.factor(data$preweight - data$weight6weeks)
+data$gender = as.factor(data$gender)
+
+model_c <- aov(diet ~ lostweights * gender, data = data)
+summary(model_c)
+
+# p-value of lost weights:gender is > 0.05 which concludes that lost weight and gender have interaction
+# given the diet. It shows that diet has an effect on lost weight and gender.
+```
+
+
+#### e)
+
+
+
+
 ### Exercise 4: Yield of peas
 
 
