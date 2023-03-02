@@ -1,0 +1,87 @@
+---
+title: "Group 2"
+author:
+  - Silver Lee-A-Fong
+  - Jakub Lewkowicz
+  - Domantas Pukelevičius
+date: "2023-03-02"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Exercise 1. Trees
+#### a)
+In treeVolume data set we can distinguish response variable "Volume" and explanatory variables such as "type", "height" and "diameter". We performed ANOVA with response variable "Volume" and only one explanatory variable "type" to analyse if type of a tree impacts its volume. Based on p-value from ANOVA table, we can observe that tree volume is not significantly impacted by a tree type.
+```{r}
+df <- read.csv("Data/treeVolume.txt",header = TRUE, sep = "")
+df$type = as.factor(df$type)
+anova_m = lm(volume ~ type, data=df);anova(anova_m)
+```
+We split data into tree categories and compared means of those two sample groups by performing t-test. Such t-test can be related to ANOVA performed above, because it also compares significant difference between volumes in those two groups. Summarizing t-test p-value implies that volume is not impacted by type of a tree.
+
+```{r}
+beech_samples = df[df$type == "beech", "volume"]
+oak_samples = df[df$type == "oak", "volume"]
+t.test(beech_samples, oak_samples)
+```
+
+Estimated volumes of those two tree types can be expressed as sample mean for a particular group and standard error.
+\[\bar{X} = \frac{1}{n}\sum_{i=1}^{n}X_i\]
+\[SE = \frac{\sigma}{\sqrt{n}}\]
+```{r}
+beech_mean = mean(beech_samples); oak_mean = mean(oak_samples)
+se_beech = sd(beech_samples) / sqrt(length(beech_samples))
+se_oak = sd(oak_samples) / sqrt(length(oak_samples))
+beech_mean; se_beech
+oak_mean; se_oak
+```
+
+#### b)
+
+We performed ANOVA where we included both height and diameter as explanatory variables and volume as response variable. From ANOVA table we can observe that both factors have significant impact on tree's volume.
+
+```{r}
+anova_m = lm(volume ~ height + diameter, data=df); anova(anova_m)
+```
+We also performed different ANOVAs on groups separated by types. In this test we wanted to test influence of diameter and height separately on those two groups. From ANOVA tables where our explanatory variable was diameter, we can observe that volume is influenced in non significantly different way for both groups. Contrary, from ANOVA tables where height was explanatory variable, we can observe that it does not influence oak's volume in a significant way. Beech type tree's height influences it's volume in a significant way.
+```{r}
+anova_beech_diameter = lm(beech_samples ~ df[df$type == "beech", "diameter"]); anova(anova_beech_diameter)
+anova_oak_diameter = lm(oak_samples ~ df[df$type == "oak", "diameter"]); anova(anova_oak_diameter)
+
+anova_beech_height = lm(beech_samples ~ df[df$type == "beech", "height"]); anova(anova_beech_height)
+anova_oak_height = lm(oak_samples ~ df[df$type == "oak", "height"]); anova(anova_oak_height)
+```
+
+#### c)
+
+Based on previously achieved results we can draw following conclusions:
+  - Type does not impact tree's volume.
+  - If we take all samples into consideration both height and diameter impact tree's volume significantly.
+  - If we analyse height and diameter influence on tree's volume grouped by tree's type, we can observe that height does not influence oak's volume in a significant way.
+  
+We can observe that height and diameter are correlated for beech type trees, while they are not for oak type trees. This observation can also explain why height does not impact oak's volume in a significant way (what we observed previously).
+```{r}
+par(mfrow=c(1, 2))
+plot(df[df$type == "beech", "diameter"], df[df$type == "beech", "height"])
+plot(df[df$type == "oak", "diameter"], df[df$type == "oak", "height"])
+cor.test(df[df$type == "beech", "diameter"], df[df$type == "beech", "height"])
+cor.test(df[df$type == "oak", "diameter"], df[df$type == "oak", "height"])
+```
+Using the resulting model we predicted volume of a tree, based on the avaregae diameter.
+```{r}
+avg_diameter = mean(df$diameter)
+model = lm(volume ~ diameter, data=df);
+predict(model, data.frame(diameter = c(avg_diameter)))
+```
+
+#### d)
+We decided to compare two different linear models. In both volume is a response variable, both have height and diameter as explanatory variable. Second model additionaly includes interaction between diameter and height, because those factors might be dependent on each other, therefore we decided to test it. P-value from ANOVA table confirms that adding interaction (between diameter and height) to a model2, significantly improves its fit over model1.
+```{r}
+model1 = lm(volume ~ diameter + height, data=df)
+model2 = lm(volume ~ diameter + height + diameter*height, data=df)
+anova(model1, model2)
+```
