@@ -1,0 +1,72 @@
+---
+title: "assignment2_edda"
+output: pdf_document
+date: "2023-03-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+The data in expensescrime.txt Download expensescrime.txt were obtained to determine factors related to state expenditures on criminal activities (courts, police, etc.) The variables are: state (indicating the state in the USA), expend (state expenditures on criminal activities in $1000), bad (crime rate per 100000), crime (number of persons under criminal supervision), lawyers (number of lawyers in the state), employ (number of persons employed in the state) and pop (population of the state in 1000). In the regression analysis, take expend as response variable and bad, crime, lawyers, employ and pop as explanatory variables
+
+
+Make some graphical summaries of the data. Investigate the problem of influence points, and the problem of collinearity.
+
+Influence points investigation was done by calculating Cook's distances for fitted with linear regression model where expend is response variable and bad, crime, lawyers, employ and pop are explanatory variables. It was found that data points at indexes 5, 8, 35 and 44 produce Cook's distance values larger than 1, which makes these indices influence points (according to rule of thumb).
+
+collinearity problem is depicted in paired scatter plots, where each explanatory variable is plotted against each other (pairwise collinearities). From scatterplots it is evidant that these pairs of explanaotry variables are correlated: bad and lawyers, bad and employ, bad and pop, lawyers and employ, lawyers and pop, employ and pop. To comfirm other pairwise collinearities graphical inference is not sufficient.
+
+```{r}
+crime_df = read.csv('data/expensescrime.txt', sep = '',header = TRUE)
+crime_df$state = as.factor(crime_df$state)
+response_vars = c('bad','crime','lawyers','employ','pop')
+crime_lm = lm(expend ~ bad + crime + lawyers + employ + pop,data = crime_df)
+cooks_dist = cooks.distance(crime_lm)
+
+plot(1:51,cooks_dist,type="b", xlab='index',main='Cooks distances')
+pairs(crime_df[response_vars])
+
+round(cooks_dist[cooks_dist > 1],2)
+
+```
+
+b)  Fit a linear regression model to the data. Use the step-up method to find the best model. Comment.
+
+
+By using step-up method for variable selection it was found that $expend = \beta_0 + \beta_1 employ + e$ model is our best choice. This model reported $R^2$ value of 0.954 and by adding any other explanatory variable the $R^2$ did not increase significantly, therefore, we do not include second variable into our linear regression. Also, we checked that chosen model's p-values for intercept and employ were significant ($p-value < 0.05$). 
+```{r}
+#with one var (expend ~ ?)
+round(summary(lm(expend ~ bad,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ crime,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ lawyers,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ,data=crime_df))$r.squared,3) #largest R^2
+round(summary(lm(expend ~ pop,data=crime_df))$r.squared,3)
+#check significance:
+round(summary(lm(expend ~ employ,data=crime_df))$coefficients,3)
+
+#with 2 vars (expend ~ employ + ?)
+round(summary(lm(expend ~ employ + bad,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + crime,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + lawyers,data=crime_df))$r.squared,3) #largest R^2
+round(summary(lm(expend ~ employ + pop,data=crime_df))$r.squared,3)
+
+```
+c)  Determine a 95% prediction interval for the expend using the model you preferred in b) for a (hypothetical) state with bad=50, crime=5000, lawyers=5000, employ=5000 and pop=5000. Can you improve this interval?
+
+Our estimated 95% prediction interval for expend in our model of choice,$expend = \beta_0 + \beta_1 employ + e$, was [-406.9165, 641.6441]. In theory, this interval could be improved by increasing sample size, however, we do not have such luxury, therefore, the only thing we could do is to increase confidence interval (for example: 98%).
+
+
+```{r}
+newxstate=data.frame(bad=50,crime=5000,lawyers=5000,employ=5000,pop=5000)
+predict(lm(expend ~ employ,data=crime_df), newxstate,interval="prediction",level=0.95)
+```
+d)  Apply the LASSO method to choose the relevant variables (with default parameters as in the lecture and lambda=lambda.1se). (You will need to install the R-package glmnet, which is not included in the standard distribution of R.) Compare the resulting model with the model obtained in b). (Beware that in general a new run delivers a new model because of a new train set.)
+```{r setup, include=FALSE}
+library(glmnet)
+```
+```{r}
+
+
+```
+
+
