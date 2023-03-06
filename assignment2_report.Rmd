@@ -85,3 +85,43 @@ model1 = lm(volume ~ diameter + height, data=df)
 model2 = lm(volume ~ diameter + height + diameter*height, data=df)
 anova(model1, model2)
 ```
+
+### Excercise 4. Military coups
+
+#### a)
+
+By performing Poisson regression on the full data set (miltcoup as response variable and oligarchy, pollib, parties, pctvote, popn, suze, numelec, numregim as explanatory variables) we can observe (based on p-values) that only some variables are significant: oligarchy, pollib and parties. Remaining variables do not seem to have significant impact on the model.
+
+```{r}
+df <- read.csv("Data/coups.txt", header=TRUE, sep=" ")
+model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size + numelec + numregim, data=df, family = "poisson")
+summary(model)
+```
+
+#### b)
+
+Next following step down approach variable "numelec" is being eliminated due to the highest p-value. Variable represents total number of legislative and presidential elections.
+```{r}
+model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size + numregim, data=df, family = "poisson")
+summary(model)
+```
+Next we eliminate "numregim:
+```{r}
+model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size, data=df, family = "poisson")
+summary(model)
+```
+Next we eliminate "size":
+```{r}
+model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn, data=df, family = "poisson")
+summary(model)
+```
+Next we eliminate "popn":
+```{r}
+model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote, data=df, family = "poisson")
+summary(model)
+```
+finally we eliminate "pctvote" ending up with the model were are explanatory variables are significant:
+```{r}
+model = glm(miltcoup ~ oligarchy + pollib + parties, data=df, family = "poisson")
+summary(model)
+```
