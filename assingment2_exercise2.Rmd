@@ -61,10 +61,43 @@ newxstate=data.frame(bad=50,crime=5000,lawyers=5000,employ=5000,pop=5000)
 predict(lm(expend ~ employ,data=crime_df), newxstate,interval="prediction",level=0.95)
 ```
 d)  Apply the LASSO method to choose the relevant variables (with default parameters as in the lecture and lambda=lambda.1se). (You will need to install the R-package glmnet, which is not included in the standard distribution of R.) Compare the resulting model with the model obtained in b). (Beware that in general a new run delivers a new model because of a new train set.)
+
+
+For this part we refitted linear regression model from part b (recall: $expend = \beta_0 + \beta_1 employ + e$) with training data sample that composes of 67% of original expensecrime data set. Than we computed mean squared error (MSE) of part b model for prediction from the test data sample  which composes of 33% of original data. We want to compare b model's MSE with a new model for which regressors where chosen by implemenitng LASSO method with $\lambda$ derived from cross validation. As specified in the question we used most regularized $\lambda$ with errors within one standard error of the minimum. The LASSO method suggess to use lawyers and employ as regressors which differs from our model from part b (with regressor - expense) where we used step up method to choose features. However, LASSO suggested features resulted in a regression model with higher MSE than model from part b when predicting was done with identical test data samples. Recalling the scatter plots from part a, we see that variables employ and lawyers are correlated, therefore LASSO suggested features introduce collinearity between explanatory variables. 
 ```{r setup, include=FALSE}
 library(glmnet)
 ```
 ```{r}
+
+y=as.double(as.matrix(crime_df$expend))
+x=as.matrix(crime_df[,-c(1,2)])
+train=sample(1:nrow(x),0.67*nrow(x))
+x.train=x[train,]; y.train=y[train]
+x.test=x[-train,]; y.test=y[-train]
+
+lm_from_b=lm(expend ~ employ,data=crime_df, subset=train)
+predict_lm_from_b=predict(lm_from_b,newdata=crime_df[-train,])
+mse_lm_from_b=mean((y.test-predict_lm_from_b)^2); mse_lm_from_b # prediction quality by the linear model
+
+lasso = glmnet(x.train,y.train,alpha=1)
+cv.lasso = cv.glmnet(x.train,y.train,alpha=1,type.measure='mse')
+
+
+plot(lasso,label=T,xvar='lambda')
+plot(cv.lasso) # the best lambda by cross-validation
+#lambda.min=cv.lasso$lambda.min; lambda.1se=cv.lasso$lambda.1se
+#coef(lasso,s=cv.lasso$lambda.min)
+coef(lasso,s=cv.lasso$lambda.1se)
+ # cyl,hp,wt,am and carb are relevant
+
+#lasso.pred1=predict(lasso,s=lasso$lambda.min,newx=x.test) 
+lasso.pred2=predict(lasso,s=cv.lasso$lambda.1se,newx=as.matrix(x.test))
+
+#mse1.lasso=mean((y.test-lasso.pred1)^2); mse1.lasso
+mse2.lasso=mean((y.test-lasso.pred2)^2)
+
+mse2.lasso
+mse_lm_from_b
 
 
 ```
