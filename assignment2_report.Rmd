@@ -94,8 +94,8 @@ By performing Poisson regression on the full data set (miltcoup as response vari
 
 ```{r}
 df <- read.csv("Data/coups.txt", header=TRUE, sep=" ")
-model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size + numelec + numregim, data=df, family = "poisson")
-summary(model)
+model_full = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size + numelec + numregim, data=df, family = "poisson")
+summary(model_full)
 ```
 
 #### b)
@@ -124,4 +124,25 @@ finally we eliminate "pctvote" ending up with the model were are explanatory var
 ```{r}
 model = glm(miltcoup ~ oligarchy + pollib + parties, data=df, family = "poisson")
 summary(model)
+```
+We can compare new model with eliminated variables and old model that uses variables by performing likelyhood ratio test.
+```{r}
+anova(model_full, model, test="LRT")
+```
+#### c)
+
+By using the model from b) to predict the number of coups for a hypothetical country for all the three levels of political liberalization and averages of remaining characteristics (parties and oligarchy), we can clearly observe that level of political liberalization significantly impacts results. The lower political liberalization factor, the higher predicted number of coups.
+
+```{r}
+avg_oligarchy = mean(df$oligarchy)
+avg_parties = mean(df$parties)
+d0 = data.frame(oligarchy = c(avg_oligarchy), parties=c(avg_parties), pollib=c(0))
+d1 = data.frame(oligarchy = c(avg_oligarchy), parties=c(avg_parties), pollib=c(1))
+d2 = data.frame(oligarchy = c(avg_oligarchy), parties=c(avg_parties), pollib=c(2))
+response = numeric(3)
+response[1] = predict(model, newdata = d0, type="response")
+response[2] = predict(model, newdata = d1, type="response")
+response[3] = predict(model, newdata = d2, type="response")
+pollib = c(0, 1, 2)
+plot(pollib, response)
 ```
