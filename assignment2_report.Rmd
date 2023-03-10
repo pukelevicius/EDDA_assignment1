@@ -86,6 +86,66 @@ model2 = lm(volume ~ diameter + height + diameter*height, data=df)
 anova(model1, model2)
 ```
 
+### Excercise 3. Titanic
+
+#### a)
+From the table we can observe that more women, regardless of age, survived compared to men. Most of the men that survived were young and under the age of 14. We can show this with a barplot, in the first barplot we can observe that most of the survivors were female and the highest amount of survivors falls in the range of 15-35. We also observe that the 1st PClasshas the most people survived, followed by 3rd and 2nd at last. We can see from logistic regression that PCLass2nd, PClass3rd, Age, Sexmale are significatant for the survival status.
+
+```{r}
+df <- read.csv("Data/titanic.txt", header=TRUE, sep="")
+
+
+tot = xtabs(~PClass+Age+Sex, data=df)
+tot.c=xtabs(Survived~PClass+Age+Sex, data=df)
+round(tot.c/tot, 2)
+
+tot2 = xtabs(Survived~Sex+Age, data=df)
+tot_partial = xtabs(~Sex+Age, data=df)
+barplot(tot2, tot_partial, xlab="age", ylab="Total Survived", legend=TRUE)
+
+tot_pclass=xtabs(Survived~PClass, data=df)
+tot_pclass_partial=xtabs(~PClass, data=df)
+barplot(tot_pclass, tot_pclass_partial, xlab="Pclass", ylab="Total Survived")
+
+
+# Fit a logistic regression model
+titanic_model_a = glm(Survived ~ PClass + Age + Sex, data=df, family="binomial")
+summary(titanic_model_a)
+```
+
+#### b)
+
+For the interaction between Age and PClass, both Age and PClass are significant which means there exists an interaction. For Age and Sex, only Sex is significant. Indicating that Age is insignificant. The best model from these two should be Age with PClass. We can observe that the probability for survival is significant with $0.048$.
+
+```{r}
+
+# Age with PClass
+drop1(glm(Survived ~ Age+PClass, data=df), test="Chisq")
+
+# Age with Sex
+drop1(glm(Survived ~ Age+Sex, data=df), test="Chisq")
+
+
+# Age with PClass factored
+df$Age = factor(df$Age)
+df$PClass = factor(df$PClass)
+apclass = glm(Survived ~ Age+PClass, data=df)
+summary(apclass)
+```
+
+
+#### c)
+
+
+
+#### d)
+
+
+
+#### e)
+
+
+
 ### Excercise 4. Military coups
 
 #### a)
