@@ -149,43 +149,41 @@ summary(apclass)
 ### Excercise 4. Military coups
 
 #### a)
-
-By performing Poisson regression on the full data set (miltcoup as response variable and oligarchy, pollib, parties, pctvote, popn, suze, numelec, numregim as explanatory variables) we can observe (based on p-values) that only some variables are significant: oligarchy, pollib and parties. Remaining variables do not seem to have significant impact on the model.
-
+Before performing Poisson regression on the full data set, variables pollib and numregim were transformed to factors since they have at most 4 distinct values (levels). It was also considered to transform columns oligarchy, parties and numelec to factors as well, but since they would have had significantly more levels and the interpretation of Poisson regression would be very complex, they were left as numeric variables. The only statistically significant variables in our estimated Poisson regression on full data set were: oligarchy, pollib and parties. The general Poisson regression is defined as $Y_{in} \sim Poisson(\lambda_{in}), \lambda_{in} = e^{\mu + \alpha_i + \beta X_{in}}$, where $i=1,...,I$, $n=1,...,N$. Thus, by interpreting only the coefficients of significant features we can say that the factor variable pollib increases $\lambda$ by $e^{pollib_1}=e^{-1.175}$ times, when $pollib=1$; $\lambda$ increases $e^{pollib2}=e^{-1.808}$ times, for $pollib=2$. Since default R parameterization assumes that the first level of factor is equal to 0, its coefficient is not in summary. Let $P_{in}$ denote random variable parties, then \lambda would increase for every one-unit increase in $P_{in}$ by $e^{0.033}$ times. The same logic applies for variable oligarchy (lets denote it $O_{in}$), every one-unit increase in $O_{in}$, increases \lambda by $e^{0.082}$ times. 
 ```{r}
-df <- read.csv("Data/coups.txt", header=TRUE, sep=" ")
-model_full = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size + numelec + numregim, data=df, family = "poisson")
+df <- read.csv("Data/coups.txt", header=TRUE, sep=" "); set.seed(123)
+df$pollib = as.factor(df$pollib); df$numregim = as.factor(df$numregim)
+model_full = glm(miltcoup ~  pollib + numregim + parties + oligarchy + pctvote + popn + size + numelec, data=df, family = "poisson")
 summary(model_full)
 ```
-
 #### b)
 
 Next following step down approach variable "numelec" is being eliminated due to the highest p-value. Variable represents total number of legislative and presidential elections.
 ```{r}
 model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size + numregim, data=df, family = "poisson")
-summary(model)
+round(summary(model)$coeff,4)
 ```
 Next we eliminate "numregim:
 ```{r}
 model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn + size, data=df, family = "poisson")
-summary(model)
+round(summary(model)$coeff,4)
 ```
 Next we eliminate "size":
 ```{r}
 model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote + popn, data=df, family = "poisson")
-summary(model)
+round(summary(model)$coeff,4)
 ```
 Next we eliminate "popn":
 ```{r}
 model = glm(miltcoup ~ oligarchy + pollib + parties + pctvote, data=df, family = "poisson")
-summary(model)
+round(summary(model)$coeff,4)
 ```
 finally we eliminate "pctvote" ending up with the model were are explanatory variables are significant:
 ```{r}
 model = glm(miltcoup ~ oligarchy + pollib + parties, data=df, family = "poisson")
-summary(model)
+round(summary(model)$coeff,4)
 ```
-We can compare new model with eliminated variables and old model that uses variables by performing likelyhood ratio test.
+We can compare new model with eliminated variables and old model that uses variables by performing likelihood ratio test.
 ```{r}
 anova(model_full, model, test="LRT")
 ```
@@ -194,15 +192,13 @@ anova(model_full, model, test="LRT")
 By using the model from b) to predict the number of coups for a hypothetical country for all the three levels of political liberalization and averages of remaining characteristics (parties and oligarchy), we can clearly observe that level of political liberalization significantly impacts results. The lower political liberalization factor, the higher predicted number of coups.
 
 ```{r}
-avg_oligarchy = mean(df$oligarchy)
-avg_parties = mean(df$parties)
-d0 = data.frame(oligarchy = c(avg_oligarchy), parties=c(avg_parties), pollib=c(0))
-d1 = data.frame(oligarchy = c(avg_oligarchy), parties=c(avg_parties), pollib=c(1))
-d2 = data.frame(oligarchy = c(avg_oligarchy), parties=c(avg_parties), pollib=c(2))
-response = numeric(3)
-response[1] = predict(model, newdata = d0, type="response")
-response[2] = predict(model, newdata = d1, type="response")
-response[3] = predict(model, newdata = d2, type="response")
-pollib = c(0, 1, 2)
-plot(pollib, response)
+library(ggplot2)
+hypothetical_df = data.frame(pollib=c(0,1,2), oligarchy=rep(mean(df$oligarchy),3),
+           parties=rep(mean(df$parties),3))
+hypothetical_df$pollib = as.factor(hypothetical_df$pollib)
+hypothetical_df$pred_miltcoup = predict(model, newdata=hypothetical_df, type="response")
+plot(x = hypothetical_df$pollib,y=hypothetical_df$response,
+     )
+p = ggplot(hypothetical_df, aes(x=pollib, y=pred_miltcoup)) + geom_point()
+p + xlab("pollib") + ylab("predicted miltcoup")
 ```
