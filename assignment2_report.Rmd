@@ -86,6 +86,128 @@ model2 = lm(volume ~ diameter + height + diameter*height, data=df)
 anova(model1, model2)
 ```
 
+### Exercise 2. Expenditure on criminal activities
+
+### a)
+Influence points investigation was done by calculating Cook's distances for fitted with linear regression model where expend is response variable and bad, crime, lawyers, employ and pop are explanatory variables. It was found that data points at indexes 5, 8, 35 and 44 produce Cook's distance values larger than 1, which makes these indices influence points (according to rule of thumb).
+
+collinearity problem is depicted in paired scatter plots, where each explanatory variable is plotted against each other (pairwise collinearities). From scatter plots it is evident that these pairs of explanatory variables are correlated: bad and lawyers, bad and employ, bad and pop, lawyers and employ, lawyers and pop, employ and pop. To confirm other pairwise collinearities graphical inference is not sufficient.
+
+```{r}
+crime_df = read.csv('data/expensescrime.txt', sep = '',header = TRUE)
+crime_df$state = as.factor(crime_df$state)
+response_vars = c('bad','crime','lawyers','employ','pop')
+crime_lm = lm(expend ~ bad + crime + lawyers + employ + pop,data = crime_df)
+cooks_dist = cooks.distance(crime_lm)
+
+plot(1:51,cooks_dist,type="b", xlab='index',main='Cooks distances')
+pairs(crime_df[response_vars])
+
+round(cooks_dist[cooks_dist > 1],2)
+```
+
+### b)
+
+By using step-up method for variable selection it was found that $expend_i = \beta_0 + \beta_1 employ_i + \beta_2 lawyers_i + e$ model is our best choice. This model reported $R^2$ value of 0.963 and by adding other explanatory variables the $R^2$ did not increase significantly (also models with three features had atleast one insignificant predictor). Therefore, third variable is not included into our linear regression. Also, we checked that chosen model's p-values for intercept, employ and lawyers were significant ($p-value < 0.05$).
+
+The estimated $\beta_1$ and  $\beta_2$ coefficients for employ and lawyers respectively suggest that an increase of one employee in the state increases crime related expenditures by 30, while an additional lawyer costs 27 dollars.  
+
+Trying models with one explanatory variable:
+```{r}
+round(summary(lm(expend ~ bad,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ bad,data=crime_df))$coeff,3)
+```
+```{r}
+round(summary(lm(expend ~ crime,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ crime,data=crime_df))$coeff,3)
+```
+
+```{r}
+round(summary(lm(expend ~ lawyers,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ lawyers,data=crime_df))$coeff,3)
+```
+```{r}
+round(summary(lm(expend ~ employ,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ,data=crime_df))$coeff,3)
+```
+```{r}
+round(summary(lm(expend ~ pop,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ pop,data=crime_df))$coeff,3)
+```
+we choose employ as single explanatory variable, since it has the largest $R^2$ and employ is significant.
+
+Trying models with two explanatory variables (expend ~ employ + ?):
+```{r}
+round(summary(lm(expend ~ employ + bad,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + bad,data=crime_df))$coeff,3)
+```
+```{r}
+round(summary(lm(expend ~ employ + crime,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + crime,data=crime_df))$coeff,3)
+```
+```{r}
+round(summary(lm(expend ~ employ + lawyers,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + lawyers,data=crime_df))$coeff,3)
+```
+```{r}
+round(summary(lm(expend ~ employ + pop,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + pop,data=crime_df))$coeff,3)
+```
+with second iteration of step-up method, the resulting model is selected: $expend_i = \beta_0 + \beta_1 employ_i + \beta_2 lawyers_i + e$
+
+Trying models with three explanatory variables (expend ~ employ + lawyers + ?):
+```{r}
+round(summary(lm(expend ~ employ + lawyers + bad,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + lawyers + bad ,data=crime_df))$coeff,3)
+```
+
+```{r}
+round(summary(lm(expend ~ employ + lawyers + crime,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + lawyers + crime,data=crime_df))$coeff,3)
+```
+
+```{r}
+round(summary(lm(expend ~ employ + lawyers + pop,data=crime_df))$r.squared,3)
+round(summary(lm(expend ~ employ + lawyers + pop,data=crime_df))$coeff,3)
+```
+
+### c)
+
+Our estimated 95% prediction interval for expend in our model of choice,$expend_i = \beta_0 + \beta_1 employ_i + \beta_2 lawyers_i + e$, was [-302.9307, 647.3504]. In theory, this interval could be improved by increasing sample size, however, we do not have such luxury, therefore, the only thing we could do is to increase confidence interval (for example: 98%).
+
+```{r}
+newxstate=data.frame(bad=50,crime=5000,lawyers=5000,employ=5000,pop=5000)
+predict(lm(expend ~ employ + lawyers,data=crime_df), newxstate,interval="prediction",level=0.95)
+```
+### d)
+Apply the LASSO method to choose the relevant variables (with default parameters as in the lecture and lambda=lambda.1se). (You will need to install the R-package glmnet, which is not included in the standard distribution of R.) Compare the resulting model with the model obtained in b). (Beware that in general a new run delivers a new model because of a new train set.)
+
+
+For this part we refitted linear regression model from part b (recall: $expend_i = \beta_0 + \beta_1 employ_i + \beta_2 lawyers_i + e$) with training data sample that composes of 67% of original expensecrime data set. Than we estimated mean squared error (MSE) of part b model for predictions from the test data sample, which composes of 33% of original data. We want to compare b model's MSE with a new model, for which predictors are chosen with LASSO method, where $\lambda$ is derived from cross validation. As specified in the question we used most regularized $\lambda$ with errors within one standard error of the minimum. The LASSO method suggested to use lawyers and employ as predictors which is the same as our linear model from part b, where we used step up method to choose features. However, LASSO regression resulted in a model with higher MSE than model from part b when predicting was done with identical test data samples. It is also worth to address that we set the random seed of following code to 1, in order to make our results reproducible. Without set seed, each time random sampling for train and test split give different sets of data, which also results in different results for both models. 
+```{r setup, include=FALSE}
+library(glmnet)
+```
+```{r}
+set.seed(1)
+y=as.double(as.matrix(crime_df$expend))
+x=as.matrix(crime_df[,-c(1,2)])
+train=sample(1:nrow(x),0.67*nrow(x))
+x.train=x[train,]; y.train=y[train]
+x.test=x[-train,]; y.test=y[-train]
+
+lm_from_b=lm(expend ~ employ + lawyers,data=crime_df, subset=train)
+predict_lm_from_b=predict(lm_from_b,newdata=crime_df[-train,])
+mse_lm_from_b=mean((y.test-predict_lm_from_b)^2)
+
+lasso = glmnet(x.train,y.train,alpha=1)
+cv.lasso = cv.glmnet(x.train,y.train,alpha=1,type.measure='mse')
+lasso.pred=predict(lasso,s=cv.lasso$lambda.1se,newx=as.matrix(x.test))
+mse.lasso=mean((y.test-lasso.pred)^2)
+round(coef(lasso,s=cv.lasso$lambda.1se),4)
+paste("lasso model's MSE: ",round(mse.lasso,3))
+paste("part b model's MSE: ",round(mse_lm_from_b,3))
+```
+
 ### Excercise 3. Titanic
 
 #### a)
@@ -93,7 +215,6 @@ From the table we can observe that more women, regardless of age, survived compa
 
 ```{r}
 df <- read.csv("Data/titanic.txt", header=TRUE, sep="")
-
 
 tot = xtabs(~PClass+Age+Sex, data=df)
 tot.c=xtabs(Survived~PClass+Age+Sex, data=df)
@@ -149,7 +270,7 @@ summary(apclass)
 ### Excercise 4. Military coups
 
 #### a)
-Before performing Poisson regression on the full data set, variables pollib and numregim were transformed to factors since they have at most 4 distinct values (levels). It was also considered to transform columns oligarchy, parties and numelec to factors as well, but since they would have had significantly more levels and the interpretation of Poisson regression would be very complex, they were left as numeric variables. The only statistically significant variables in our estimated Poisson regression on full data set were: oligarchy, pollib and parties. The general Poisson regression is defined as $Y_{in} \sim Poisson(\lambda_{in}), \lambda_{in} = e^{\mu + \alpha_i + \beta X_{in}}$, where $i=1,...,I$, $n=1,...,N$. Thus, by interpreting only the coefficients of significant features we can say that the factor variable pollib increases $\lambda$ by $e^{pollib_1}=e^{-1.175}$ times, when $pollib=1$; $\lambda$ increases $e^{pollib2}=e^{-1.808}$ times, for $pollib=2$. Since default R parameterization assumes that the first level of factor is equal to 0, its coefficient is not in summary. Let $P_{in}$ denote random variable parties, then \lambda would increase for every one-unit increase in $P_{in}$ by $e^{0.033}$ times. The same logic applies for variable oligarchy (lets denote it $O_{in}$), every one-unit increase in $O_{in}$, increases \lambda by $e^{0.082}$ times. 
+Before performing Poisson regression on the full data set, variables pollib and numregim were transformed to factors since they have at most 4 distinct values (levels). It was also considered to transform columns oligarchy, parties and numelec to factors as well, but since they would have had significantly more levels and the interpretation of Poisson regression would be very complex, they were left as numeric variables. The only statistically significant variables in our estimated Poisson regression on full data set were: oligarchy, pollib and parties. The general Poisson regression is defined as $Y_{in} \sim Poisson(\lambda_{in}), \lambda_{in} = e^{\mu + \alpha_i + \beta X_{in}}$, where $i=1,...,I$, $n=1,...,N$. Thus, by interpreting only the coefficients of significant features we can say that the factor variable pollib increases $\lambda$ by $e^{pollib_1}=e^{-1.175}$ times, when $pollib=1$; $\lambda$ increases $e^{pollib2}=e^{-1.808}$ times, for $pollib=2$. Since default R parameterization assumes that the first level of factor is equal to 0, its coefficient is not in summary. Let $P_{in}$ denote random variable parties, then $\lambda$ would increase for every one-unit increase in $P_{in}$ by $e^{0.033}$ times. The same logic applies for variable oligarchy (lets denote it $O_{in}$), every one-unit increase in $O_{in}$, increases $\lambda$ by $e^{0.082}$ times. 
 ```{r}
 df <- read.csv("Data/coups.txt", header=TRUE, sep=" "); set.seed(123)
 df$pollib = as.factor(df$pollib); df$numregim = as.factor(df$numregim)
