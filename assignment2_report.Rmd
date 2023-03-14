@@ -211,7 +211,7 @@ paste("part b model's MSE: ",round(mse_lm_from_b,3))
 ### Excercise 3. Titanic
 
 #### a)
-From the table we can observe that more women, regardless of age, survived compared to men. Most of the men that survived were young and under the age of 14. We can show this with a barplot, in the first barplot we can observe that most of the survivors were female and the highest amount of survivors falls in the range of 15-35. We also observe that the 1st PClasshas the most people survived, followed by 3rd and 2nd at last. We can see from logistic regression that PCLass2nd, PClass3rd, Age, Sexmale are significatant for the survival status.
+From the table we can observe that more women, regardless of age, survived compared to men. Most of the men that survived were young and under the age of 14. We can show this with a barplot, in the first barplot we can observe that most of the survivors were female and the highest amount of survivors falls in the range of 15-35. We also observe that the 1st PClass has the most people survived, followed by 3rd and 2nd at last. We can see from logistic regression that PCLass 2nd, PClass3rd, Age, Sexmale are significant for the survival status.
 
 ```{r}
 df <- read.csv("Data/titanic.txt", header=TRUE, sep="")
@@ -236,15 +236,15 @@ summary(titanic_model_a)
 
 #### b)
 
-For the interaction between Age and PClass, both Age and PClass are significant which means there exists an interaction. For Age and Sex, only Sex is significant. Indicating that Age is insignificant. The best model from these two should be Age with PClass. We can observe that the probability for survival is significant with $0.048$.
+For the interaction between Age and PClass, there exists no interaction between Age and PClass. For Age and Sex, there exists an interaction. This suggests that the hypothesis of the betas being equal to each other is rejected. The best model from these two should be Age with Sex. We can observe that the probability for survival is significant with $0.048$.
 
 ```{r}
 
 # Age with PClass
-drop1(glm(Survived ~ Age+PClass, data=df), test="Chisq")
+anova(glm(Survived ~ Age*PClass, data=df), test="Chisq")
 
 # Age with Sex
-drop1(glm(Survived ~ Age+Sex, data=df), test="Chisq")
+anova(glm(Survived ~ Age*Sex, data=df), test="Chisq")
 
 
 # Age with PClass factored
@@ -256,11 +256,32 @@ summary(apclass)
 
 
 #### c)
+We can do prediction on our logistic regression model to predict the survival status. By adding the significant values to the model we can predict the survival status. Using the predict function in R we can predict the survival status based on the dataset. This will compute the probability of survival using the significant values from the logistic regression model. As a quality measure we could 
 
 
 
 #### d)
+Another approach would be to apply a contingency table test and to investigate whether factor passenger class has an effect on the survival status and whether factor gender has an effect on the survival status. Implement the relevant test(s).
 
+Check whether PClass has an effect on survival status 
+Check whether gender has an effect on survival status
+
+
+```{r}
+
+# Overall model
+glm1 = glm(Survived ~ PClass + Sex, data=df, family="binomial")
+
+# PClass effect on survival status
+glm2 = glm(Survived ~ Sex, data=df, family="binomial")
+anova(glm2, glm1)
+
+
+# Sex effect on survival status
+glm3 = glm(Survived ~ PClass, data=df, family="binomial")
+anova(glm3, glm1)
+
+```
 
 
 #### e)
