@@ -1,3 +1,4 @@
+\usepackage{amsmath}
 ---
 title: "Group 2"
 author:
@@ -30,7 +31,7 @@ t.test(beech_samples, oak_samples)
 ```
 
 Estimated volumes of those two tree types can be expressed as sample mean for a particular group and standard error.
-\[\bar{X} = \frac{1}{n}\sum_{i=1}^{n}X_i\]
+\[\bar{X} = \frac{1}{n}\sum_{i=1}^{n}X_i\] 
 \[SE = \frac{\sigma}{\sqrt{n}}\]
 ```{r}
 beech_mean = mean(beech_samples); oak_mean = mean(oak_samples)
@@ -210,16 +211,27 @@ paste("part b model's MSE: ",round(mse_lm_from_b,3))
 
 ### Excercise 3. Titanic
 
+Addressing missing values in Age column by filling it with a mean Age of PClass category:
+```{r}
+library(dplyr)
+df <- read.csv("Data/titanic.txt", header=TRUE, sep="")
+sapply(df, function(x) sum(is.na(x)))
+df = df%>%group_by(PClass)%>%mutate(Age=ifelse(is.na(Age),mean(Age,na.rm=T),Age))
+```
 #### a)
-From the table we can observe that more women, regardless of age, survived compared to men. Most of the men that survived were young and under the age of 14. We can show this with a barplot, in the first barplot we can observe that most of the survivors were female and the highest amount of survivors falls in the range of 15-35. We also observe that the 1st PClass has the most people survived, followed by 3rd and 2nd at last. We can see from logistic regression that PCLass 2nd, PClass3rd, Age, Sexmale are significant for the survival status.
+
+For logistic regression fit, variables Sex and PClass were set to factors. It was found that all three predictors (Age, Sex and PClass) are statistically significant (p-value<0.05). Further, The estimates of logistic regression are displayed together with their odds transformation, which is done by taking an exponent of an estimate. The odds ration suggest, that males and older people had less chance to survive the disaster of Titanic. Also, passengers in higher passenger classes were expected to survive more. 
+
+To investigate how passenger class influences the chances of survival, a bar plot representing each class and its number of survivors was drawn. Here, it can be seen that first class travelers had the most survivors compared to other classes, in which the second by survival rate was the third class, then followed by second class passengers.
+
+To support the claim that female and younger passengers had larger chances of survival, another bar plot was constructed, where the X axis represent age of survivors, and the Y axis shows number of survivors. Also, each bar represent the proportion of male and female survivors for a given age. Here it can be seen that the distribution of survivors by age is skewed to the left and larger proportion of bars are black (representing female survivor), which confirm the claim that younger passengers and also females had better chances to survive.
 
 ```{r}
-df <- read.csv("Data/titanic.txt", header=TRUE, sep="")
-
+options(digits = 3)
+df$Sex = as.factor(df$Sex); df$PClass = as.factor(df$PClass)
 tot = xtabs(~PClass+Age+Sex, data=df)
 tot.c=xtabs(Survived~PClass+Age+Sex, data=df)
-round(tot.c/tot, 2)
-
+#round(tot.c/tot, 2)
 tot2 = xtabs(Survived~Sex+Age, data=df)
 tot_partial = xtabs(~Sex+Age, data=df)
 barplot(tot2, tot_partial, xlab="age", ylab="Total Survived", legend=TRUE)
@@ -228,64 +240,78 @@ tot_pclass=xtabs(Survived~PClass, data=df)
 tot_pclass_partial=xtabs(~PClass, data=df)
 barplot(tot_pclass, tot_pclass_partial, xlab="Pclass", ylab="Total Survived")
 
-
 # Fit a logistic regression model
 titanic_model_a = glm(Survived ~ PClass + Age + Sex, data=df, family="binomial")
-summary(titanic_model_a)
+drop1(titanic_model_a,test='Chisq')
+print('logistic regression estimates:')
+summary(titanic_model_a)$coeff[,'Estimate']
+print("logistic regression odds:")
+exp(summary(titanic_model_a)$coeff[,'Estimate'])
+
 ```
 
 #### b)
+ Investigate the interaction of predictor Age with PClass, and the interaction of Age with Sex. From this and a), choose (and justify) a resulting model. For this model, report the estimate for the probability of survival for each combination of levels of the factors PClass and Sex for a person of age 55.
+ 
+The interaction between predictors Age and PClass is not present, because of $p-value>0.05$ (see first output). In contrast, the interaction between Age and Sex features is present, since the interaction term's p-values is less than $0.05$. Recall, that the p-values of interaction terms test $H_0: \beta_1=\beta_2$.
 
-For the interaction between Age and PClass, there exists no interaction between Age and PClass. For Age and Sex, there exists an interaction. This suggests that the hypothesis of the betas being equal to each other is rejected. The best model from these two should be Age with Sex. We can observe that the probability for survival is significant with $0.048$.
+Regarding model choice, it was decided to proceed with model from part a, where all predictors are included (Sex, PClass, Age). The motives to choose this model comes from the fact that its coefficients are all significant. However, it should be taken into account that being a male and being a woman passenger with a same age will have different probability of survival. As plots from part a suggest that males had much worse chances of survival. 
 
+The predicted probabilities of survival for hypothetical data of each combination of levels of the factors PClass and Sex for a person of age 55, Shows a trend that better PClass contributes a lot to a chances of survival as 55 years old male from 1st class had very similar chances of survival as the female from 3rd class. 
 ```{r}
+Age_pclass_iaction=glm(Survived ~ Age*PClass, data=df, family = "binomial")
+anova(Age_pclass_iaction,test="Chisq")['Pr(>Chi)']
+Age_sex_iaction=glm(Survived ~ Age*Sex, data=df,family = "binomial")
+anova(Age_sex_iaction,test="Chisq")['Pr(>Chi)']
 
-# Age with PClass
-anova(glm(Survived ~ Age*PClass, data=df), test="Chisq")
+chosen_model = glm(Survived ~ PClass + Age + Sex, data=df, family="binomial")
+drop1(chosen_model,test='Chisq')['Pr(>Chi)']
 
-# Age with Sex
-anova(glm(Survived ~ Age*Sex, data=df), test="Chisq")
-
-
-# Age with PClass factored
-df$Age = factor(df$Age)
-df$PClass = factor(df$PClass)
-apclass = glm(Survived ~ Age+PClass, data=df)
-summary(apclass)
+pred_df=data.frame(matrix(nrow = 0, ncol = 3))
+colnames(pred_df)=c("Pclass","Sex","Age")
+for (i in unique(df$PClass)){
+    pred_df=rbind(pred_df, data.frame(PClass=rep(i,2),
+                  Sex=c("female","male"),Age=rep(55,2)))
+}
+pred_df$PClass=as.factor(pred_df$PClass);pred_df$Sex=as.factor(pred_df$Sex)
+pred_df$pred_survived=predict(chosen_model,newdata=pred_df,type="response")
+pred_df
 ```
 
 
 #### c)
-We can do prediction on our logistic regression model to predict the survival status. By adding the significant values to the model we can predict the survival status. Using the predict function in R we can predict the survival status based on the dataset. This will compute the probability of survival using the significant values from the logistic regression model. As a quality measure we could 
+Propose a method to predict the survival status and a quality measure for your prediction and describe how you would implement that method (you do not need to implement it).
 
+To predict survival status we could follow machine learning approach. First we would need to divide our data into training and testing sets (for example: 70% of data for training, and the rest for testing). Then, the training set should be fit to logistic regression:
+\[P(Y_k=1)= \left( \frac{ 1}{ 1 + e^{x^T_k \theta}} \right), k=1,...,N\]
 
+Then, the estimate of $\hat{\theta}$ can be obtained by the maximum likelihood. Now, the data of predictors from the test split should be fitted to predict:   
+\[\hat{P_{new}}= \left( \frac{ 1}{ 1 + e^{x^T_k \hat{\theta}}} \right)\]
+
+The predictions of $\hat{P_{new}}$ can then be mapped to binary values of survival by choosing some threshold $p_0 \in [0,1]$, for which:
+\[
+    \hat{Y_{new}}= 
+\begin{cases}
+    1,& \text{if } \hat{P_{new}}\geq p_0\\
+    0,& \text{if } \hat{P_{new}}\leq p_o
+\end{cases}
+\]
+
+The quality measure for these predictions could be confussion matrix, which would check for false negatives and false positives by comparing $\hat{Y_{new}}$ with real $Y$ from the test split.
 
 #### d)
-Another approach would be to apply a contingency table test and to investigate whether factor passenger class has an effect on the survival status and whether factor gender has an effect on the survival status. Implement the relevant test(s).
 
-Check whether PClass has an effect on survival status 
-Check whether gender has an effect on survival status
-
-
+for two contingency tables, PClass & Survived and Sex & Survived, Chi squared tests were applied, which both resulted in p-values less than 0.05. Hence, it can be concluded that factors Pclass and Sex both have a significant effect on survival status.   
 ```{r}
-
-# Overall model
-glm1 = glm(Survived ~ PClass + Sex, data=df, family="binomial")
-
-# PClass effect on survival status
-glm2 = glm(Survived ~ Sex, data=df, family="binomial")
-anova(glm2, glm1)
-
-
-# Sex effect on survival status
-glm3 = glm(Survived ~ PClass, data=df, family="binomial")
-anova(glm3, glm1)
+cont_pclass=xtabs(~PClass+Survived,data=df);cont_pclass
+chisq.test(cont_pclass)
+cont_gender=xtabs(~Sex+Survived,data=df);cont_gender
+chisq.test(cont_gender)
 
 ```
 
-
 #### e)
-
+The advantage of machine learning approach is that it can yield very high prediction accuracy, however, its disadvantage is that it requires a lot computational power, especially with big quantities of data. On the other hand, contingency tables test (Chi-squared test in particular) is advantageous because it is fairly easy to conduct and it does not require hard computations. However, contingency tables test only tests the presence of an effect to response variable. Also, it can only work with factor variables and it is not suitable for predicting. 
 
 
 ### Excercise 4. Military coups
@@ -327,6 +353,7 @@ round(summary(model)$coeff,4)
 ```
 We can compare new model with eliminated variables and old model that uses variables by performing likelihood ratio test.
 ```{r}
+summary(model_full); summary(model)
 anova(model_full, model, test="LRT")
 ```
 #### c)
